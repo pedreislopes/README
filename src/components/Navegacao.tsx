@@ -17,12 +17,27 @@ const LINKS = [
   { href: "/conta", rotulo: "Conta", Icone: User },
 ];
 
+/** Bolinha com o número de itens do carrinho */
+function Contador({ n }: { n: number }) {
+  return (
+    <span className="ml-1 inline-grid min-w-5 place-items-center rounded-full bg-marca-600 px-1 text-[11px] leading-5 font-bold text-white">
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+}
+
 function estaAtivo(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
 /** Cabeçalho. "nomeUsuario" vem do servidor: null quando ninguém está logado. */
-export function Cabecalho({ nomeUsuario }: { nomeUsuario: string | null }) {
+export function Cabecalho({
+  nomeUsuario,
+  itensNoCarrinho,
+}: {
+  nomeUsuario: string | null;
+  itensNoCarrinho: number;
+}) {
   const pathname = usePathname();
   const primeiroNome = nomeUsuario?.split(" ")[0];
   return (
@@ -41,6 +56,7 @@ export function Cabecalho({ nomeUsuario }: { nomeUsuario: string | null }) {
               }`}
             >
               {rotulo}
+              {href === "/carrinho" && itensNoCarrinho > 0 && <Contador n={itensNoCarrinho} />}
             </Link>
           ))}
         </nav>
@@ -61,7 +77,7 @@ export function Cabecalho({ nomeUsuario }: { nomeUsuario: string | null }) {
   );
 }
 
-export function BarraInferior() {
+export function BarraInferior({ itensNoCarrinho }: { itensNoCarrinho: number }) {
   const pathname = usePathname();
   return (
     <nav
@@ -79,7 +95,14 @@ export function BarraInferior() {
                   ativo ? "text-marca-600" : "text-slate-500"
                 }`}
               >
-                <Icone className="h-6 w-6" strokeWidth={ativo ? 2.5 : 2} />
+                <span className="relative">
+                  <Icone className="h-6 w-6" strokeWidth={ativo ? 2.5 : 2} />
+                  {href === "/carrinho" && itensNoCarrinho > 0 && (
+                    <span className="absolute -top-1.5 -right-2.5">
+                      <Contador n={itensNoCarrinho} />
+                    </span>
+                  )}
+                </span>
                 {rotulo.split(" ")[0]}
               </Link>
             </li>

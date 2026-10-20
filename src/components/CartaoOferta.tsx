@@ -5,6 +5,7 @@ import { BadgeCheck, Briefcase, MapPin } from "lucide-react";
 import { UNIDADES_BASE, type Papel, type UnidadeBase } from "@/config/constantes";
 import { atacadoSoParaCnpj, faixasDisponiveis, precoPorUnidadeBase } from "@/domain/precos";
 import { formatarPrecoUnidade, formatarReais } from "@/lib/dinheiro";
+import { AdicionarAoCarrinho } from "./AdicionarAoCarrinho";
 import { SeloDestaque } from "./SeloDestaque";
 
 export type OfertaParaCartao = {
@@ -13,6 +14,7 @@ export type OfertaParaCartao = {
   packageLabel: string;
   priceCents: number;
   baseQuantity: number;
+  quantityStep: number;
   tiersForCpf: boolean;
   tiers: { minQuantity: number; priceCents: number }[];
   store: { name: string; region: string };
@@ -95,6 +97,8 @@ export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, patrocin
           Preço de atacado disponível para CNPJ
         </p>
       )}
+
+      <AdicionarAoCarrinho offerId={oferta.id} passo={oferta.quantityStep} embalagem={oferta.packageLabel} />
     </article>
   );
 }

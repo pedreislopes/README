@@ -43,6 +43,7 @@ model User {
   store     Store?
   sessions  Session[]
   purchases Purchase[]
+  cart      Cart?
 }
 
 /// Sessão de login (o "crachá" guardado no navegador).
@@ -124,12 +125,15 @@ model Offer {
   priceCents   Int
   /// As faixas de atacado valem também para CPF? (padrão: só CNPJ)
   tiersForCpf  Boolean @default(false)
+  /// Menor fração vendida: 1 = só inteiros (sacos, peças); 0.5 = de meio em meio (ex.: 0,5 m³ de areia)
+  quantityStep Float   @default(1)
   active       Boolean @default(true)
 
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   product    Product     @relation(fields: [productId], references: [id])
   tiers      PriceTier[]
   orderItems OrderItem[]
+  cartItems  CartItem[]
 }
 
 /// Faixa de preço por quantidade (atacado).
@@ -143,6 +147,38 @@ model PriceTier {
   priceCents  Int
 
   offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------------------------
+// Carrinho
+// -----------------------------------------------------------------------------
+
+/// Carrinho guardado no servidor (não some ao fechar o navegador).
+/// Visitante: identificado por um cookie. Ao entrar na conta, os itens
+/// do visitante são somados ao carrinho do usuário.
+model Cart {
+  id        String     @id
+  userId    String?    @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id            String   @id @default(cuid())
+  cartId        String
+  offerId       String
+  quantity      Float
+  /// "Foto" do preço e das faixas quando o item foi adicionado.
+  /// Se a loja mudar o preço depois, avisamos o cliente antes de finalizar.
+  priceSnapshot String
+  addedAt       DateTime @default(now())
+
+  cart  Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, offerId])
 }
 
 // -----------------------------------------------------------------------------
@@ -175,6 +211,8 @@ model Order {
   /// Cópia da % de comissão no momento do pedido
   commissionPercent Float
   commissionCents   Int
+  /// Frete em centavos. NULO = "a combinar com a loja" (cálculo de frete virá depois)
+  freightCents      Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -191,7 +229,8 @@ model OrderItem {
   offerId            String?
   productName        String
   packageLabel       String
-  quantity           Int
+  /// Pode ter fração (ex.: 2,5 m³ de areia)
+  quantity           Float
   /// Preço normal de 1 embalagem (sem faixa)
   listUnitPriceCents Int
   /// Preço efetivamente cobrado por embalagem (com faixa, se houver)

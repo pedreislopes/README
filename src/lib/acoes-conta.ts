@@ -12,6 +12,7 @@ import { Prisma } from "@prisma/client";
 import { CUSTO_BCRYPT, LIMITE_LOGIN, VERSAO_TERMOS } from "@/config/seguranca";
 import { normalizarEmail, validarCadastro, type ErrosCadastro } from "@/domain/cadastro";
 import { verificarBloqueio } from "@/domain/tentativas";
+import { juntarCarrinhoDoVisitante } from "./carrinho";
 import { db } from "./db";
 import { criarSessao, encerrarSessao, ipDoVisitante } from "./sessao";
 
@@ -71,6 +72,7 @@ export async function entrar(_anterior: EstadoLogin, form: FormData): Promise<Es
   // 3. Deu certo: zera os erros deste e-mail e cria a sessão
   await db.loginAttempt.deleteMany({ where: { key: chaves[0] } });
   await criarSessao(usuario.id);
+  await juntarCarrinhoDoVisitante(usuario.id);
   redirect(destinoSeguro(form.get("voltar"), usuario.role === "ADMIN" ? "/conta" : "/"));
 }
 
@@ -159,6 +161,7 @@ export async function cadastrar(_anterior: EstadoCadastro, form: FormData): Prom
   }
 
   await criarSessao(usuarioId);
+  await juntarCarrinhoDoVisitante(usuarioId);
   redirect(v.tipo === "LOJISTA" ? "/conta" : destinoSeguro(form.get("voltar")));
 }
 

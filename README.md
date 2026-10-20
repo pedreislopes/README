@@ -61,6 +61,19 @@ Ficam em `prisma/dados-teste.ts` (listas fáceis de editar) e são gravados por 
   `/termos` e `/privacidade`); a data e a versão do aceite ficam registradas.
 - O documento aparece **mascarado** na tela da conta (ex.: `***.456.789-**`).
 
+## Carrinho e pedidos
+
+- O carrinho fica guardado no servidor: quem não fez login mantém os itens e, ao entrar, eles são
+  somados ao carrinho da conta.
+- Quantidades seguem a unidade: areia e brita de 0,5 em 0,5 m³; sacos, milheiros e peças só inteiros.
+- A faixa de atacado é aplicada automaticamente, com a economia mostrada em cada item. Perto da próxima
+  faixa aparece o incentivo "Adicione mais X e pague R$ Y" (ajustável em `src/config/carrinho.ts`).
+- Se a loja mudar o preço depois que o item entrou no carrinho, o cliente é avisado e só confirma
+  depois de aceitar os novos valores.
+- Cada pedido guarda uma "foto" dos preços: mudanças futuras na loja não alteram pedidos antigos.
+- Frete: "a combinar com a loja" (campo já reservado no banco para o cálculo futuro).
+- Não há pagamento real: o pedido é registrado, dividido por loja, com a comissão de cada uma calculada.
+
 ## Onde fica cada coisa
 
 | Pasta | O que tem |

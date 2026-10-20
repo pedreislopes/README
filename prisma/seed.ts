@@ -10,6 +10,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { PASSO_PADRAO_POR_UNIDADE } from "../src/config/carrinho";
 import { CUSTO_BCRYPT, VERSAO_TERMOS } from "../src/config/seguranca";
 import { digitosCnpj, digitosCpf } from "../src/domain/documentos";
 import {
@@ -102,6 +103,8 @@ function sortearFatores(lojasAprovadas: string[], idDestaque: string) {
 
 async function main() {
   console.log("Limpando o banco…");
+  await db.cartItem.deleteMany();
+  await db.cart.deleteMany();
   await db.orderItem.deleteMany();
   await db.order.deleteMany();
   await db.purchase.deleteMany();
@@ -187,6 +190,8 @@ async function main() {
         packageLabel: embalagem,
         baseQuantity: quantidadeBase,
         priceCents,
+        // Areia e brita (m³) de 0,5 em 0,5; o resto só em quantidades inteiras
+        quantityStep: quantidadeBase === 1 ? (PASSO_PADRAO_POR_UNIDADE[m.unidadeBase] ?? 1) : 1,
         tiersForCpf: comFaixas && (m.faixasParaCpf ?? false),
         tiers: comFaixas
           ? {

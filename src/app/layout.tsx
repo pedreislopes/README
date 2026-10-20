@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BarraInferior, Cabecalho } from "@/components/Navegacao";
+import { contarItensDoCarrinho } from "@/lib/carrinho";
 import { usuarioAtual } from "@/lib/sessao";
 import "./globals.css";
 
@@ -33,13 +34,14 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const usuario = await usuarioAtual();
+  const itensNoCarrinho = await contarItensDoCarrinho();
   return (
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
-        <Cabecalho nomeUsuario={usuario?.name ?? null} />
+        <Cabecalho nomeUsuario={usuario?.name ?? null} itensNoCarrinho={itensNoCarrinho} />
         {/* pb-20 deixa espaço para a barra inferior no celular */}
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-4 pb-24 md:pb-10">{children}</main>
-        <BarraInferior />
+        <BarraInferior itensNoCarrinho={itensNoCarrinho} />
       </body>
     </html>
   );

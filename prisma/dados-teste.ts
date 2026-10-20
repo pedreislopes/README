@@ -138,7 +138,9 @@ export const MATERIAIS: MaterialTeste[] = [
  */
 export const EMBALAGENS_ALTERNATIVAS = [
   { materialId: "cimento-cp2", embalagem: "Saco 25 kg", quantidadeBase: 25, acrescimo: 0.08, lojas: ["asa-norte", "guara"] },
-  { materialId: "tijolo-8-furos", embalagem: "Unidade", quantidadeBase: 1, acrescimo: 0.15, lojas: ["asa-norte", "sobradinho"] },
+  // Tijolo: por milheiro (padrão) ou por unidade, para quem precisa de pouco
+  { materialId: "tijolo-8-furos", embalagem: "Unidade", quantidadeBase: 1, acrescimo: 0.15, lojas: ["asa-norte", "sobradinho", "taguatinga", "guara"] },
+  { materialId: "tijolo-6-furos", embalagem: "Unidade", quantidadeBase: 1, acrescimo: 0.15, lojas: ["asa-norte", "ceilandia", "taguatinga"] },
   { materialId: "cabo-2-5", embalagem: "Metro", quantidadeBase: 1, acrescimo: 0.25, lojas: ["taguatinga", "aguas-claras", "gama"] },
 ];
 
