@@ -22,3 +22,19 @@ export function reaisParaCentavos(texto: string): number | null {
   if (!Number.isFinite(valor) || valor < 0) return null;
   return Math.round(valor * 100);
 }
+
+const formatadorFino = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 3,
+});
+
+/**
+ * Preço por unidade padronizada, que pode ter frações de centavo.
+ * Abaixo de R$ 1 mostra 3 casas para diferenciar ofertas parecidas:
+ * 77,8 centavos -> "R$ 0,778"
+ */
+export function formatarPrecoUnidade(centavos: number): string {
+  return centavos < 100 ? formatadorFino.format(centavos / 100) : formatarReais(Math.round(centavos));
+}
