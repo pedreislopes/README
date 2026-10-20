@@ -30,14 +30,19 @@ const ofertas = [
 ];
 
 describe("montarResultados", () => {
-  it("ordena por menor preço da embalagem (padrão)", () => {
+  it("ordena por menor preço da embalagem", () => {
     const r = montarResultados([cimento], ofertas, { ordem: "preco" });
     expect(r.grupos[0].ofertas.map((o) => o.id)).toEqual(["c25", "c50-barato", "c50-destaque"]);
   });
 
-  it("ordena por menor preço por unidade padronizada", () => {
+  it("ordena por menor preço por unidade padronizada (padrão do site)", () => {
     const r = montarResultados([cimento], ofertas, { ordem: "unidade" });
     expect(r.grupos[0].ofertas.map((o) => o.id)).toEqual(["c50-barato", "c25", "c50-destaque"]);
+  });
+
+  it("na ordem padrão, o primeiro resultado é sempre o Melhor preço", () => {
+    const r = montarResultados([cimento], ofertas, { ordem: "unidade" });
+    expect(r.grupos[0].ofertas[0].id).toBe(r.grupos[0].melhorPrecoId);
   });
 
   it("dá o selo Melhor preço pelo preço por unidade, não pelo preço da embalagem", () => {

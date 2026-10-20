@@ -54,8 +54,8 @@ export function FiltrosBusca({ valores }: { valores: ValoresFiltros }) {
             defaultValue={valores.ordem}
             className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-medium text-slate-900"
           >
-            <option value="preco">Menor preço</option>
             <option value="unidade">Menor preço por kg/m³/unidade</option>
+            <option value="preco">Menor preço da embalagem</option>
           </SelectAutoEnvio>
         </label>
       </div>

@@ -1,10 +1,11 @@
 // Cartão de uma oferta (um produto em uma loja).
 // No celular, o NOME DA LOJA e o PREÇO são o que mais aparece.
 
-import { BadgeCheck, Briefcase, MapPin, Megaphone } from "lucide-react";
+import { BadgeCheck, Briefcase, MapPin } from "lucide-react";
 import { UNIDADES_BASE, type Papel, type UnidadeBase } from "@/config/constantes";
 import { atacadoSoParaCnpj, faixasDisponiveis, precoPorUnidadeBase } from "@/domain/precos";
 import { formatarPrecoUnidade, formatarReais } from "@/lib/dinheiro";
+import { SeloDestaque } from "./SeloDestaque";
 
 export type OfertaParaCartao = {
   id: string;
@@ -22,8 +23,9 @@ type Props = {
   unidadeBase: string;
   papel: Papel | null;
   melhorPreco?: boolean;
+  /** Loja em destaque (anúncio pago): mostra "Oferta destaque" + "Patrocinado" */
   patrocinado?: boolean;
-  /** Mostra o nome do produto no cartão (usado no patrocinado) */
+  /** Mostra o nome do produto no cartão (usado na oferta destaque do topo) */
   nomeProduto?: string;
 };
 
@@ -44,12 +46,8 @@ export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, patrocin
       }`}
     >
       {(melhorPreco || patrocinado) && (
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          {patrocinado && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-              <Megaphone className="h-3.5 w-3.5" /> Patrocinado
-            </span>
-          )}
+        <div className="mb-2 flex flex-wrap items-start gap-1.5">
+          {patrocinado && <SeloDestaque />}
           {melhorPreco && (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
               <BadgeCheck className="h-3.5 w-3.5" /> Melhor preço

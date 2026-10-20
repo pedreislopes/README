@@ -1,4 +1,4 @@
-// Página de busca e comparação de preços: /busca?q=cimento&regiao=Gama&ordem=preco
+// Página de busca e comparação de preços: /busca?q=cimento&regiao=Gama&ordem=unidade
 import Link from "next/link";
 import { ChevronRight, SearchX } from "lucide-react";
 import { CartaoOferta } from "@/components/CartaoOferta";
@@ -28,7 +28,8 @@ export default async function Busca(props: PageProps<"/busca">) {
     categoria: CATEGORIAS.find((c) => c === texto(params.categoria)) ?? "",
     min: texto(params.min),
     max: texto(params.max),
-    ordem: texto(params.ordem) === "unidade" ? "unidade" : "preco",
+    // Padrão: menor preço por unidade padronizada (o 1º resultado é sempre o "Melhor preço")
+    ordem: texto(params.ordem) === "preco" ? "preco" : "unidade",
   };
 
   const usuario = await usuarioAtual();

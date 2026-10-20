@@ -69,3 +69,15 @@ export const STATUS_PEDIDO = {
   ENTREGUE: "Entregue",
 } as const;
 export type StatusPedido = keyof typeof STATUS_PEDIDO;
+
+/**
+ * Textos da loja em destaque (anúncio pago).
+ * Pelo Código de Defesa do Consumidor (art. 36), publicidade precisa ser
+ * facilmente identificável: a palavra "Patrocinado" fica SEMPRE visível.
+ */
+export const DESTAQUE = {
+  selo: "Oferta destaque",
+  aviso: "Patrocinado",
+  explicacao:
+    "Esta loja paga para aparecer em destaque. O selo Melhor preço indica a oferta mais barata de verdade.",
+} as const;
