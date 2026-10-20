@@ -1,0 +1,70 @@
+// =============================================================================
+// Listas fixas usadas em todo o sistema.
+// Para adicionar uma região ou categoria, basta incluir aqui.
+// =============================================================================
+
+/** Regiões administrativas do DF atendidas no MVP */
+export const REGIOES = [
+  "Asa Norte",
+  "Asa Sul",
+  "Taguatinga",
+  "Ceilândia",
+  "Águas Claras",
+  "Samambaia",
+  "Gama",
+  "Sobradinho",
+  "Guará",
+  "Vicente Pires",
+] as const;
+export type Regiao = (typeof REGIOES)[number];
+
+/** Categorias de materiais */
+export const CATEGORIAS = [
+  "Cimento e argamassa",
+  "Areia e pedra",
+  "Tijolos e blocos",
+  "Ferragens e aço",
+  "Hidráulica",
+  "Elétrica",
+  "Pisos e revestimentos",
+  "Tintas",
+  "Madeiras",
+  "Telhas e coberturas",
+] as const;
+export type Categoria = (typeof CATEGORIAS)[number];
+
+/** Unidades padronizadas usadas para comparar preços entre lojas */
+export const UNIDADES_BASE = {
+  kg: "kg",
+  m3: "m³",
+  un: "unidade",
+  m: "metro",
+  l: "litro",
+} as const;
+export type UnidadeBase = keyof typeof UNIDADES_BASE;
+
+/** Tipos de conta */
+export const PAPEIS = {
+  CPF: "Pessoa física (CPF)",
+  CNPJ: "Empresa / Construtora (CNPJ)",
+  LOJISTA: "Lojista",
+  ADMIN: "Administrador",
+} as const;
+export type Papel = keyof typeof PAPEIS;
+
+/** Situação da loja na plataforma */
+export const STATUS_LOJA = {
+  PENDENTE: "Aguardando aprovação",
+  APROVADA: "Aprovada",
+  BLOQUEADA: "Bloqueada",
+} as const;
+export type StatusLoja = keyof typeof STATUS_LOJA;
+
+/** Etapas do pedido, na ordem em que acontecem */
+export const STATUS_PEDIDO = {
+  NOVO: "Novo",
+  RECEBIDO: "Recebido",
+  SEPARADO: "Separado",
+  ENTREGUE: "Entregue",
+} as const;
+export type StatusPedido = keyof typeof STATUS_PEDIDO;

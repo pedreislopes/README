@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/*
+ * Cores da marca Solid.
+ * "marca" = laranja de obra (botões e destaques)
+ * Fundo claro de propósito: fica legível no sol, no canteiro de obra.
+ */
+@theme inline {
+  --color-marca-50: #fff7ed;
+  --color-marca-100: #ffedd5;
+  --color-marca-500: #f97316;
+  --color-marca-600: #ea580c;
+  --color-marca-700: #c2410c;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: #f8fafc; /* slate-50 */
+  color: #0f172a; /* slate-900 */
+}

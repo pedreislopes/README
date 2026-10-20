@@ -1,0 +1,186 @@
+// =============================================================================
+// SOLID — Estrutura do banco de dados
+// =============================================================================
+// Cada "model" abaixo vira uma tabela no banco.
+//
+// Convenções importantes:
+// - Todo valor em dinheiro é guardado em CENTAVOS, como número inteiro
+//   (ex.: R$ 40,90 = 4090). Isso evita erros de arredondamento.
+// - Campos de "tipo" ou "status" são textos; os valores aceitos estão
+//   listados nos comentários e em src/config/constantes.ts.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // O banco é um único arquivo: prisma/dev.db.
+  // Para publicar na internet, troque por PostgreSQL (provider e url).
+  url      = "file:./dev.db"
+}
+
+// -----------------------------------------------------------------------------
+// Pessoas que usam o sistema
+// -----------------------------------------------------------------------------
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  /// "CPF" | "CNPJ" | "LOJISTA" | "ADMIN"
+  role         String
+  /// CPF ou CNPJ, só os números
+  document     String
+  phone        String?
+  createdAt    DateTime @default(now())
+
+  store     Store?
+  sessions  Session[]
+  purchases Purchase[]
+}
+
+/// Sessão de login (o "crachá" guardado no navegador)
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------------------------
+// Lojas e produtos
+// -----------------------------------------------------------------------------
+model Store {
+  id                String   @id @default(cuid())
+  name              String
+  /// CNPJ da loja, só os números
+  cnpj              String
+  /// Uma das regiões administrativas de src/config/constantes.ts
+  region            String
+  address           String
+  phone             String
+  /// "PENDENTE" | "APROVADA" | "BLOQUEADA" — só lojas APROVADAS aparecem na busca
+  status            String   @default("PENDENTE")
+  /// Comissão cobrada pela plataforma, em % (ex.: 8.5 = 8,5%)
+  commissionPercent Float    @default(10)
+  /// Loja em destaque: aparece no topo da busca como "Patrocinado"
+  featured          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  ownerId String @unique
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  offers Offer[]
+  orders Order[]
+}
+
+/// Material do catálogo geral (ex.: "Cimento CP II").
+/// Várias lojas vendem o mesmo material; cada venda é uma "Offer".
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  /// Uma das categorias de src/config/constantes.ts
+  category    String
+  description String?
+  /// Unidade padronizada para comparar preços: "kg" | "m3" | "un" | "m" | "l"
+  baseUnit    String
+  /// Palavras extras para a busca (ex.: "cp2 cp-ii portland")
+  keywords    String  @default("")
+
+  offers Offer[]
+}
+
+/// Um produto à venda em uma loja específica, com preço e embalagem.
+model Offer {
+  id             String  @id @default(cuid())
+  storeId        String
+  productId      String
+  brand          String?
+  /// Como aparece para o cliente (ex.: "Saco 50 kg", "Milheiro")
+  packageLabel   String
+  /// Quanto da unidade padronizada vem em 1 embalagem
+  /// (ex.: saco de 50 kg = 50; milheiro = 1000; barra de 6 m = 6)
+  baseQuantity   Float
+  /// Preço normal de 1 embalagem, em centavos
+  priceCents     Int
+  /// As faixas de atacado valem também para CPF? (padrão: só CNPJ)
+  tiersForCpf    Boolean @default(false)
+  active         Boolean @default(true)
+
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product    Product     @relation(fields: [productId], references: [id])
+  tiers      PriceTier[]
+  orderItems OrderItem[]
+}
+
+/// Faixa de preço por quantidade (atacado).
+/// Ex.: a partir de 50 sacos, R$ 36,00 cada.
+model PriceTier {
+  id          String @id @default(cuid())
+  offerId     String
+  /// Quantidade mínima para valer esta faixa
+  minQuantity Int
+  /// Preço de 1 embalagem nesta faixa, em centavos
+  priceCents  Int
+
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------------------------
+// Compras e pedidos
+// -----------------------------------------------------------------------------
+
+/// Uma compra feita pelo cliente. Se tiver itens de 3 lojas,
+/// ela é dividida em 3 pedidos (Order), um para cada loja.
+model Purchase {
+  id           String   @id @default(cuid())
+  userId       String
+  totalCents   Int
+  /// Quanto o cliente economizou com faixas de atacado
+  savingsCents Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id])
+  orders Order[]
+}
+
+/// Pedido recebido por UMA loja.
+model Order {
+  id                String   @id @default(cuid())
+  purchaseId        String
+  storeId           String
+  /// "NOVO" | "RECEBIDO" | "SEPARADO" | "ENTREGUE"
+  status            String   @default("NOVO")
+  subtotalCents     Int
+  savingsCents      Int      @default(0)
+  /// Cópia da % de comissão no momento do pedido
+  commissionPercent Float
+  commissionCents   Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  purchase Purchase    @relation(fields: [purchaseId], references: [id])
+  store    Store       @relation(fields: [storeId], references: [id])
+  items    OrderItem[]
+}
+
+/// Item de um pedido. Guarda cópia do nome e dos preços,
+/// para o histórico não mudar se a loja alterar o produto depois.
+model OrderItem {
+  id                 String @id @default(cuid())
+  orderId            String
+  offerId            String?
+  productName        String
+  packageLabel       String
+  quantity           Int
+  /// Preço normal de 1 embalagem (sem faixa)
+  listUnitPriceCents Int
+  /// Preço efetivamente cobrado por embalagem (com faixa, se houver)
+  unitPriceCents     Int
+  totalCents         Int
+
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  offer Offer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+}
