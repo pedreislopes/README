@@ -10,6 +10,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { CUSTO_BCRYPT, VERSAO_TERMOS } from "../src/config/seguranca";
 import { digitosCnpj, digitosCpf } from "../src/domain/documentos";
 import {
   CLIENTES,
@@ -109,9 +110,11 @@ async function main() {
   await db.product.deleteMany();
   await db.store.deleteMany();
   await db.session.deleteMany();
+  await db.loginAttempt.deleteMany();
   await db.user.deleteMany();
 
-  const senha = await bcrypt.hash(SENHA_TESTE, 10);
+  // Mesmo custo do cadastro real: o tempo de resposta do login não pode variar
+  const senha = await bcrypt.hash(SENHA_TESTE, CUSTO_BCRYPT);
 
   console.log("Criando clientes e administrador…");
   for (const [i, c] of CLIENTES.entries()) {
@@ -123,6 +126,8 @@ async function main() {
         role: c.papel,
         document: c.papel === "CNPJ" ? cnpjTeste(45120330 + i) : cpfTeste(123456780 + i * 7),
         phone: c.telefone,
+        termsAcceptedAt: new Date(),
+        termsVersion: VERSAO_TERMOS,
       },
     });
   }
@@ -149,6 +154,8 @@ async function main() {
             role: "LOJISTA",
             document: cnpj,
             phone: loja.telefone,
+            termsAcceptedAt: new Date(),
+            termsVersion: VERSAO_TERMOS,
           },
         },
       },

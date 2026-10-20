@@ -25,28 +25,45 @@ datasource db {
 // Pessoas que usam o sistema
 // -----------------------------------------------------------------------------
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  passwordHash    String
   /// "CPF" | "CNPJ" | "LOJISTA" | "ADMIN"
-  role         String
-  /// CPF ou CNPJ, só os números
-  document     String
-  phone        String?
-  createdAt    DateTime @default(now())
+  role            String
+  /// CPF ou CNPJ, só os números. Único: não pode haver duas contas com o mesmo documento.
+  document        String    @unique
+  phone           String?
+  /// Quando aceitou os Termos de Uso e a Política de Privacidade (registro exigido pela LGPD)
+  termsAcceptedAt DateTime?
+  /// Qual versão dos termos foi aceita
+  termsVersion    String?
+  createdAt       DateTime  @default(now())
 
   store     Store?
   sessions  Session[]
   purchases Purchase[]
 }
 
-/// Sessão de login (o "crachá" guardado no navegador)
+/// Sessão de login (o "crachá" guardado no navegador).
+/// O navegador guarda um código secreto; aqui guardamos só uma "impressão digital"
+/// (hash SHA-256) dele. Assim, quem copiar o banco não consegue usar as sessões.
 model Session {
   id        String   @id
   userId    String
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Tentativa de login que FALHOU. Usada para bloquear ataques de força bruta
+/// (muitas senhas testadas seguidas). Apagada quando a pessoa acerta a senha.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  /// "email:fulano@x.com" ou "ip:200.1.2.3"
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
 }
 
 // -----------------------------------------------------------------------------
@@ -94,20 +111,20 @@ model Product {
 
 /// Um produto à venda em uma loja específica, com preço e embalagem.
 model Offer {
-  id             String  @id @default(cuid())
-  storeId        String
-  productId      String
-  brand          String?
+  id           String  @id @default(cuid())
+  storeId      String
+  productId    String
+  brand        String?
   /// Como aparece para o cliente (ex.: "Saco 50 kg", "Milheiro")
-  packageLabel   String
+  packageLabel String
   /// Quanto da unidade padronizada vem em 1 embalagem
   /// (ex.: saco de 50 kg = 50; milheiro = 1000; barra de 6 m = 6)
-  baseQuantity   Float
+  baseQuantity Float
   /// Preço normal de 1 embalagem, em centavos
-  priceCents     Int
+  priceCents   Int
   /// As faixas de atacado valem também para CPF? (padrão: só CNPJ)
-  tiersForCpf    Boolean @default(false)
-  active         Boolean @default(true)
+  tiersForCpf  Boolean @default(false)
+  active       Boolean @default(true)
 
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   product    Product     @relation(fields: [productId], references: [id])
@@ -169,7 +186,7 @@ model Order {
 /// Item de um pedido. Guarda cópia do nome e dos preços,
 /// para o histórico não mudar se a loja alterar o produto depois.
 model OrderItem {
-  id                 String @id @default(cuid())
+  id                 String  @id @default(cuid())
   orderId            String
   offerId            String?
   productName        String

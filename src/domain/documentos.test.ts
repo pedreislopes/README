@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cnpjValido, cpfValido, formatarCnpj, formatarCpf } from "./documentos";
+import { cnpjValido, cpfValido, formatarCnpj, formatarCpf, mascararDocumento } from "./documentos";
 
 describe("CPF", () => {
   it("aceita CPF válido, com ou sem pontuação", () => {
@@ -32,5 +32,15 @@ describe("CNPJ", () => {
 
   it("formata", () => {
     expect(formatarCnpj("11222333000181")).toBe("11.222.333/0001-81");
+  });
+});
+
+describe("mascararDocumento", () => {
+  it("esconde o começo e o fim do CPF", () => {
+    expect(mascararDocumento("52998224725")).toBe("***.982.247-**");
+  });
+
+  it("esconde o começo e o fim do CNPJ", () => {
+    expect(mascararDocumento("11.222.333/0001-81")).toBe("**.***.333/0001-**");
   });
 });

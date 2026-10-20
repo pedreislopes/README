@@ -49,6 +49,18 @@ Ficam em `prisma/dados-teste.ts` (listas fáceis de editar) e são gravados por 
 - Faixas de atacado (ex.: cimento 50+ sacos e 200+ sacos) só para CNPJ, **exceto** em
   *Argamassa colante AC-I* e *Bloco de concreto 14x19x39*, que valem também para CPF.
 
+## Segurança do login
+
+- Senhas guardadas com **bcrypt** (criptografia forte, de mão única), nunca em texto.
+- Login com mensagem única **"E-mail ou senha incorretos"**, com o mesmo tempo de resposta
+  exista ou não o e-mail, para não revelar quem tem cadastro.
+- **Limite de tentativas**: 5 erros seguidos no mesmo e-mail (ou 20 no mesmo endereço de internet)
+  bloqueiam o login por 15 minutos. Ajustável em `src/config/seguranca.ts`.
+- Não há duas contas com o mesmo **CPF/CNPJ** nem com o mesmo e-mail.
+- Cadastro exige aceite dos **Termos de Uso** e da **Política de Privacidade** (textos provisórios em
+  `/termos` e `/privacidade`); a data e a versão do aceite ficam registradas.
+- O documento aparece **mascarado** na tela da conta (ex.: `***.456.789-**`).
+
 ## Onde fica cada coisa
 
 | Pasta | O que tem |

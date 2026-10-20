@@ -104,6 +104,12 @@ export default async function Busca(props: PageProps<"/busca">) {
             )}
           </p>
 
+          {papel === "CNPJ" && (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+              Conta empresa: as faixas de atacado aparecem em cada oferta.
+            </p>
+          )}
+
           {patrocinado && (
             <CartaoOferta
               oferta={patrocinado.oferta}

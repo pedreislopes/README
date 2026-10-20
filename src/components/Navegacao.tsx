@@ -21,8 +21,10 @@ function estaAtivo(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function Cabecalho() {
+/** Cabeçalho. "nomeUsuario" vem do servidor: null quando ninguém está logado. */
+export function Cabecalho({ nomeUsuario }: { nomeUsuario: string | null }) {
   const pathname = usePathname();
+  const primeiroNome = nomeUsuario?.split(" ")[0];
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -42,6 +44,18 @@ export function Cabecalho() {
             </Link>
           ))}
         </nav>
+        {primeiroNome ? (
+          <Link href="/conta" className="text-sm font-medium text-slate-600 md:hidden">
+            Olá, <span className="font-bold text-slate-900">{primeiroNome}</span>
+          </Link>
+        ) : (
+          <Link
+            href="/entrar"
+            className="rounded-lg bg-marca-600 px-4 py-2 text-sm font-semibold text-white hover:bg-marca-700 md:hidden"
+          >
+            Entrar
+          </Link>
+        )}
       </div>
     </header>
   );

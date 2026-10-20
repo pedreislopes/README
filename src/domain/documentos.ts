@@ -62,3 +62,15 @@ export function formatarCnpj(texto: string): string {
     "$1.$2.$3/$4-$5",
   );
 }
+
+/**
+ * Esconde parte do documento para exibir na tela (proteção de dados).
+ * CPF:  "52998224725"    -> "***.982.247-**"
+ * CNPJ: "11222333000181" -> "**.***.333/0001-**"
+ */
+export function mascararDocumento(texto: string): string {
+  const n = somenteNumeros(texto);
+  if (n.length === 11) return `***.${n.slice(3, 6)}.${n.slice(6, 9)}-**`;
+  if (n.length === 14) return `**.***.${n.slice(5, 8)}/${n.slice(8, 12)}-**`;
+  return "***";
+}
