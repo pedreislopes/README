@@ -84,7 +84,7 @@ model Product {
   /// Uma das categorias de src/config/constantes.ts
   category    String
   description String?
-  /// Unidade padronizada para comparar preços: "kg" | "m3" | "un" | "m" | "l"
+  /// Unidade padronizada para comparar preços: "kg" | "m3" | "m2" | "un" | "m" | "l"
   baseUnit    String
   /// Palavras extras para a busca (ex.: "cp2 cp-ii portland")
   keywords    String  @default("")

@@ -37,6 +37,7 @@ export type Categoria = (typeof CATEGORIAS)[number];
 export const UNIDADES_BASE = {
   kg: "kg",
   m3: "m³",
+  m2: "m²",
   un: "unidade",
   m: "metro",
   l: "litro",

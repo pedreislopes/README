@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "banco:resetar": "prisma migrate reset --force",
+    "banco:resetar": "prisma migrate deploy && prisma db seed",
     "postinstall": "prisma generate"
   },
   "dependencies": {
