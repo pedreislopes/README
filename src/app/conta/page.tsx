@@ -52,6 +52,9 @@ export default async function Conta() {
             {loja.status === "PENDENTE" && <Clock className="h-4 w-4" />}
             {STATUS_LOJA[loja.status as StatusLoja] ?? loja.status}
           </p>
+          <Link href="/loja" className="mt-3 block rounded-lg bg-marca-600 py-2.5 text-center font-semibold text-white">
+            Abrir painel da loja
+          </Link>
           {loja.status === "PENDENTE" && (
             <p className="mt-2 text-sm text-slate-600">
               Nossa equipe vai analisar seu cadastro. Enquanto isso, seus produtos não aparecem na busca.

@@ -43,7 +43,8 @@ export function FormularioCadastro({ voltar, tipoInicial }: { voltar: string; ti
   const ehEmpresa = tipo !== "CPF";
 
   return (
-    <form action={acao} className="space-y-5" noValidate>
+    // key: a cada resposta com erro o formulário é redesenhado já com o que foi digitado
+    <form key={estado.resposta ?? 0} action={acao} className="space-y-5" noValidate>
       <input type="hidden" name="voltar" value={voltar} />
 
       <fieldset>

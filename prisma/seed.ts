@@ -12,12 +12,16 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PASSO_PADRAO_POR_UNIDADE } from "../src/config/carrinho";
 import { CUSTO_BCRYPT, VERSAO_TERMOS } from "../src/config/seguranca";
+import type { Papel } from "../src/config/constantes";
+import { calcularComissao } from "../src/domain/comissao";
 import { digitosCnpj, digitosCpf } from "../src/domain/documentos";
+import { calcularItem } from "../src/domain/precos";
 import {
   CLIENTES,
   EMBALAGENS_ALTERNATIVAS,
   LOJAS,
   MATERIAIS,
+  PEDIDOS_EXEMPLO,
   SENHA_TESTE,
   type MaterialTeste,
 } from "./dados-teste";
@@ -245,7 +249,65 @@ async function main() {
     }
   }
 
+  await criarPedidosDeExemplo();
   await conferir(idDestaque);
+}
+
+/** Cria pedidos de exemplo usando as MESMAS regras de preço e comissão do site */
+async function criarPedidosDeExemplo() {
+  console.log("Criando pedidos de exemplo…");
+  for (const exemplo of PEDIDOS_EXEMPLO) {
+    const cliente = await db.user.findUniqueOrThrow({ where: { email: exemplo.cliente } });
+    const data = new Date(Date.now() - exemplo.diasAtras * 24 * 60 * 60 * 1000);
+    const pedidos = [];
+
+    for (const p of exemplo.lojas) {
+      const loja = await db.store.findUniqueOrThrow({ where: { id: p.loja } });
+      const itens = [];
+      let economia = 0;
+      for (const [materialId, quantidade] of p.itens) {
+        const principal = MATERIAIS.find((m) => m.id === materialId)!.embalagem;
+        const oferta = await db.offer.findFirst({
+          where: { storeId: loja.id, productId: materialId, packageLabel: principal },
+          include: { tiers: true, product: true },
+        });
+        if (!oferta) continue; // a loja não vende este material nos dados sorteados
+        const c = calcularItem(oferta, cliente.role as Papel, quantidade, 1);
+        itens.push({
+          offerId: oferta.id,
+          productName: oferta.product.name,
+          packageLabel: oferta.packageLabel,
+          quantity: quantidade,
+          listUnitPriceCents: c.listUnitCents,
+          unitPriceCents: c.unitCents,
+          totalCents: c.totalCents,
+        });
+        economia += c.economiaCents;
+      }
+      if (itens.length === 0) continue;
+      const subtotal = itens.reduce((s, i) => s + i.totalCents, 0);
+      pedidos.push({
+        storeId: loja.id,
+        status: p.status,
+        subtotalCents: subtotal,
+        savingsCents: economia,
+        commissionPercent: loja.commissionPercent,
+        commissionCents: calcularComissao(subtotal, loja.commissionPercent),
+        createdAt: data,
+        items: { create: itens },
+      });
+    }
+
+    await db.purchase.create({
+      data: {
+        userId: cliente.id,
+        createdAt: data,
+        totalCents: pedidos.reduce((s, p) => s + p.subtotalCents, 0),
+        savingsCents: pedidos.reduce((s, p) => s + p.savingsCents, 0),
+        orders: { create: pedidos },
+      },
+    });
+  }
 }
 
 /** Confere as regras pedidas para os dados de teste e mostra um resumo. */
@@ -280,6 +342,7 @@ async function conferir(idDestaque: string) {
 
   console.log(`\n✔ ${await db.store.count()} lojas, ${produtos.length} materiais, ${totalOfertas} ofertas`);
   console.log(`✔ ${comFaixas} ofertas com faixas de atacado`);
+  console.log(`✔ ${await db.order.count()} pedidos de exemplo (${await db.order.count({ where: { status: "NOVO" } })} novos)`);
   console.log(`✔ Faixas liberadas para CPF em: ${faixasCpf.map((f) => f.productId).join(", ")}`);
   console.log(
     `✔ Diferença entre a loja mais barata e a mais cara: de ${(menorDif * 100).toFixed(1)}% a ${(maiorDif * 100).toFixed(1)}%`,

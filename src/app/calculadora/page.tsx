@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { BrickWall, ChevronLeft, Info, Layers, PaintRoller, Square, SquareStack } from "lucide-react";
 import { AVISO_ESTIMATIVA, PERDA_PADRAO, SERVICOS, type Servico } from "@/config/calculadora";
-import { calcularServico, escolherOfertaMaisBarata, type ValoresInformados } from "@/domain/calculadora";
+import {
+  calcularServico,
+  escolherLojaUnica,
+  escolherOfertaMaisBarata,
+  type Escolha,
+  type ValoresInformados,
+} from "@/domain/calculadora";
 import { formatarQuantidade } from "@/domain/quantidades";
 import { estiloCampo } from "@/components/Formulario";
 import { db } from "@/lib/db";
 import { usuarioAtual } from "@/lib/sessao";
-import { ListaMateriais, type MaterialParaLista } from "./ListaMateriais";
+import { ListaMateriais, type EscolhaParaLista, type MaterialParaLista } from "./ListaMateriais";
 
 export const metadata = { title: "Calculadora de obra" };
 
@@ -177,9 +183,38 @@ async function Resultado({
     },
   });
 
+  type OfertaDoBanco = (typeof produtos)[number]["offers"][number];
+  const ofertasPorProduto = new Map(produtos.map((p) => [p.id, p.offers]));
+
+  // Plano 1: menor preço por item (cada material na loja mais barata para ele)
+  // Plano 2: tudo numa loja só (a mais completa e, entre essas, a mais barata)
+  const lojaUnica = escolherLojaUnica(
+    resultado.materiais.map((m) => ({ produtoId: m.material.produtoId, exato: m.exato })),
+    ofertasPorProduto,
+    papel,
+  );
+
+  const paraLista = (escolha: Escolha<OfertaDoBanco> | null | undefined): EscolhaParaLista | null =>
+    escolha
+      ? {
+          offerId: escolha.oferta.id,
+          loja: escolha.oferta.store.name,
+          regiao: escolha.oferta.store.region,
+          packageLabel: escolha.oferta.packageLabel,
+          passo: escolha.oferta.quantityStep,
+          embalagens: escolha.embalagens,
+          embalagensExatas: escolha.embalagensExatas,
+          oferta: {
+            priceCents: escolha.oferta.priceCents,
+            baseQuantity: escolha.oferta.baseQuantity,
+            tiersForCpf: escolha.oferta.tiersForCpf,
+            tiers: escolha.oferta.tiers.map((t) => ({ minQuantity: t.minQuantity, priceCents: t.priceCents })),
+          },
+        }
+      : null;
+
   const materiais: MaterialParaLista[] = resultado.materiais.map((m) => {
     const produto = produtos.find((p) => p.id === m.material.produtoId);
-    const escolha = produto ? escolherOfertaMaisBarata(m.exato, produto.offers, papel) : null;
     return {
       produtoId: m.material.produtoId,
       nome: produto?.name ?? m.material.nome,
@@ -187,23 +222,13 @@ async function Resultado({
       fonte: m.material.fonte,
       conferir: m.material.conferir,
       exatoTexto: `${formatarQuantidade(Math.round(m.exato * 100) / 100)} ${m.material.unidadeTexto}`,
-      escolha: escolha && {
-        offerId: escolha.oferta.id,
-        loja: escolha.oferta.store.name,
-        regiao: escolha.oferta.store.region,
-        packageLabel: escolha.oferta.packageLabel,
-        passo: escolha.oferta.quantityStep,
-        embalagens: escolha.embalagens,
-        embalagensExatas: escolha.embalagensExatas,
-        oferta: {
-          priceCents: escolha.oferta.priceCents,
-          baseQuantity: escolha.oferta.baseQuantity,
-          tiersForCpf: escolha.oferta.tiersForCpf,
-          tiers: escolha.oferta.tiers.map((t) => ({ minQuantity: t.minQuantity, priceCents: t.priceCents })),
-        },
-      },
+      porItem: paraLista(produto ? escolherOfertaMaisBarata(m.exato, produto.offers, papel) : null),
+      lojaUnica: paraLista(lojaUnica?.escolhas.get(m.material.produtoId)),
     };
   });
+  const nomeLojaUnica = lojaUnica
+    ? produtos.flatMap((p) => p.offers).find((o) => o.storeId === lojaUnica.storeId)!.store
+    : null;
 
   return (
     <section className="space-y-4">
@@ -218,7 +243,7 @@ async function Resultado({
       </div>
       {servico.observacao && <p className="text-sm text-slate-600">{servico.observacao}</p>}
       <h2 className="text-lg font-bold">Materiais (revise antes de montar o carrinho)</h2>
-      <ListaMateriais materiais={materiais} papel={papel} />
+      <ListaMateriais materiais={materiais} papel={papel} lojaUnica={nomeLojaUnica} />
     </section>
   );
 }

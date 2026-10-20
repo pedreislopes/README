@@ -80,10 +80,25 @@ Ficam em `prisma/dados-teste.ts` (listas fáceis de editar) e são gravados por 
 - Mostra o cálculo passo a passo (ex.: "20 m² × 25 tijolos/m² = 500 + 10% de perda = 550 tijolos").
 - Arredonda sempre para cima no formato vendido e escolhe, para cada material, a oferta de menor
   custo total (ex.: 550 tijolos avulsos podem sair mais baratos que 1 milheiro).
+- Dois planos lado a lado: **menor preço por item** (várias lojas) ou **tudo numa loja só** (a mais
+  completa e, entre essas, a mais barata), com o número de fretes a combinar de cada um.
 - O cliente ajusta ou remove itens antes de montar o carrinho; materiais sem loja geram um aviso.
 - **Todos os coeficientes ficam em `src/config/calculadora.ts`**, com a fonte de cada número e a
   referência SINAPI/TCPO a conferir. Os valores atuais são de prática de mercado e **aguardam revisão
   de um engenheiro civil** (há um bloco `REVISAO` no topo do arquivo para registrar quem revisou).
+
+## Painel do lojista (`/loja`)
+
+- Aviso de **pedidos novos** com contador (no painel e no menu), pedidos com o valor da **comissão**
+  e quanto a loja recebe; botão grande para avançar o status (Novo → Recebido → Separado → Entregue).
+- Produtos: cadastrar, editar, remover; **edição rápida de preço** na lista; **Disponível / Sem
+  estoque** (sem estoque some da busca, mas não é apagado); **reajuste em massa** em % (com
+  confirmação, aplicado também às faixas de atacado); campo para procurar na lista.
+- Segurança: toda página e ação do painel usa a loja de quem está logado (`src/lib/loja.ts`); um
+  lojista nunca vê nem altera produtos ou pedidos de outra loja.
+- Loja pendente acessa o painel e cadastra produtos, com o aviso "Sua loja ainda não aparece na busca.
+  Aguardando aprovação."
+- Os dados de teste incluem 6 pedidos de exemplo (2 novos na loja de `lojista@teste.com`).
 
 ## Onde fica cada coisa
 

@@ -73,7 +73,8 @@ export async function entrar(_anterior: EstadoLogin, form: FormData): Promise<Es
   await db.loginAttempt.deleteMany({ where: { key: chaves[0] } });
   await criarSessao(usuario.id);
   await juntarCarrinhoDoVisitante(usuario.id);
-  redirect(destinoSeguro(form.get("voltar"), usuario.role === "ADMIN" ? "/conta" : "/"));
+  const inicial = usuario.role === "LOJISTA" ? "/loja" : usuario.role === "ADMIN" ? "/conta" : "/";
+  redirect(destinoSeguro(form.get("voltar"), inicial));
 }
 
 // -----------------------------------------------------------------------------
@@ -83,6 +84,8 @@ export type EstadoCadastro = {
   erros?: ErrosCadastro;
   /** Valores digitados, para não apagar o formulário quando há erro (sem as senhas) */
   valores?: Record<string, string>;
+  /** Muda a cada resposta: faz o formulário ser redesenhado com os valores enviados */
+  resposta?: number;
 };
 
 export async function cadastrar(_anterior: EstadoCadastro, form: FormData): Promise<EstadoCadastro> {
@@ -107,7 +110,7 @@ export async function cadastrar(_anterior: EstadoCadastro, form: FormData): Prom
   );
 
   const resultado = validarCadastro(dados);
-  if (!resultado.ok) return { erros: resultado.erros, valores };
+  if (!resultado.ok) return { erros: resultado.erros, valores, resposta: Date.now() };
   const v = resultado.dados;
 
   // Documento e e-mail não podem repetir
@@ -121,7 +124,7 @@ export async function cadastrar(_anterior: EstadoCadastro, form: FormData): Prom
       erros.documento = `Já existe uma conta com este ${v.tipo === "CPF" ? "CPF" : "CNPJ"}.`;
     }
     if (existente.email === v.email) erros.email = "Este e-mail já está cadastrado. Tente entrar.";
-    return { erros, valores };
+    return { erros, valores, resposta: Date.now() };
   }
 
   let usuarioId: string;
@@ -155,14 +158,14 @@ export async function cadastrar(_anterior: EstadoCadastro, form: FormData): Prom
   } catch (erro) {
     // Duas pessoas cadastrando o mesmo dado ao mesmo tempo
     if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002") {
-      return { erros: { documento: "Este CPF/CNPJ ou e-mail já está cadastrado." }, valores };
+      return { erros: { documento: "Este CPF/CNPJ ou e-mail já está cadastrado." }, valores, resposta: Date.now() };
     }
     throw erro;
   }
 
   await criarSessao(usuarioId);
   await juntarCarrinhoDoVisitante(usuarioId);
-  redirect(v.tipo === "LOJISTA" ? "/conta" : destinoSeguro(form.get("voltar")));
+  redirect(v.tipo === "LOJISTA" ? "/loja" : destinoSeguro(form.get("voltar")));
 }
 
 // -----------------------------------------------------------------------------

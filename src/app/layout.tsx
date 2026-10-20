@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BarraInferior, Cabecalho } from "@/components/Navegacao";
 import { contarItensDoCarrinho } from "@/lib/carrinho";
+import { db } from "@/lib/db";
 import { usuarioAtual } from "@/lib/sessao";
 import "./globals.css";
 
@@ -35,13 +36,19 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const usuario = await usuarioAtual();
   const itensNoCarrinho = await contarItensDoCarrinho();
+  // Lojista: número de pedidos novos no menu
+  const pedidosNovos =
+    usuario?.role === "LOJISTA"
+      ? await db.order.count({ where: { status: "NOVO", store: { ownerId: usuario.id } } })
+      : null;
+  const menu = { nomeUsuario: usuario?.name ?? null, itensNoCarrinho, pedidosNovos };
   return (
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
-        <Cabecalho nomeUsuario={usuario?.name ?? null} itensNoCarrinho={itensNoCarrinho} />
+        <Cabecalho {...menu} />
         {/* pb-20 deixa espaço para a barra inferior no celular */}
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-4 pb-24 md:pb-10">{children}</main>
-        <BarraInferior itensNoCarrinho={itensNoCarrinho} />
+        <BarraInferior {...menu} />
       </body>
     </html>
   );

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { PERDA_PADRAO, SERVICOS } from "@/config/calculadora";
 import { MATERIAIS } from "../../prisma/dados-teste";
-import { arredondarParaCima, calcularServico, escolherOfertaMaisBarata, type OfertaCandidata } from "./calculadora";
+import {
+  arredondarParaCima,
+  calcularServico,
+  escolherLojaUnica,
+  escolherOfertaMaisBarata,
+  type OfertaCandidata,
+} from "./calculadora";
 
 const servico = (id: string) => SERVICOS.find((s) => s.id === id)!;
 const qtd = (r: ReturnType<typeof calcularServico>, produtoId: string) =>
@@ -119,5 +125,52 @@ describe("calculadora — arredondamento e escolha da oferta", () => {
 
   it("devolve null quando nenhuma loja vende o material", () => {
     expect(escolherOfertaMaisBarata(10, [], "CPF")).toBeNull();
+  });
+});
+
+describe("calculadora — tudo numa loja só", () => {
+  const of = (id: string, storeId: string, priceCents: number) => ({
+    id,
+    storeId,
+    priceCents,
+    baseQuantity: 1,
+    quantityStep: 1,
+    tiersForCpf: false,
+    tiers: [],
+  });
+  const materiais = [
+    { produtoId: "tijolo", exato: 100 },
+    { produtoId: "cimento", exato: 2 },
+  ];
+
+  it("prefere a loja que tem todos os itens, mesmo que outra seja mais barata em parte", () => {
+    const ofertas = new Map([
+      ["tijolo", [of("t-A", "A", 90), of("t-B", "B", 100)]],
+      ["cimento", [of("c-B", "B", 4000)]], // só a loja B tem cimento
+    ]);
+    const r = escolherLojaUnica(materiais, ofertas, "CPF")!;
+    expect(r.storeId).toBe("B");
+    expect(r.cobertos).toBe(2);
+    expect(r.totalCents).toBe(100 * 100 + 2 * 4000);
+  });
+
+  it("entre lojas completas, escolhe a de menor total", () => {
+    const ofertas = new Map([
+      ["tijolo", [of("t-A", "A", 90), of("t-B", "B", 100)]],
+      ["cimento", [of("c-A", "A", 4200), of("c-B", "B", 4000)]],
+    ]);
+    // A: 9000 + 8400 = 17400 · B: 10000 + 8000 = 18000
+    expect(escolherLojaUnica(materiais, ofertas, "CPF")!.storeId).toBe("A");
+  });
+
+  it("se nenhuma loja tem tudo, usa a mais completa e marca o que falta", () => {
+    const ofertas = new Map([
+      ["tijolo", [of("t-A", "A", 90)]],
+      ["cimento", [] as ReturnType<typeof of>[]],
+    ]);
+    const r = escolherLojaUnica(materiais, ofertas, "CPF")!;
+    expect(r.storeId).toBe("A");
+    expect(r.cobertos).toBe(1);
+    expect(r.escolhas.get("cimento")).toBeNull();
   });
 });

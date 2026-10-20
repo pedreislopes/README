@@ -181,3 +181,33 @@ export const CLIENTES = [
   { nome: "Construtora Planalto Ltda.", email: "cnpj@teste.com", papel: "CNPJ" as const, telefone: "(61) 3326-7788" },
   { nome: "Administrador Solid", email: "admin@teste.com", papel: "ADMIN" as const, telefone: null },
 ];
+
+// -----------------------------------------------------------------------------
+// Pedidos de exemplo (para testar o painel do lojista e o do administrador)
+// -----------------------------------------------------------------------------
+export type PedidoExemplo = {
+  cliente: string;
+  diasAtras: number;
+  lojas: { loja: string; status: "NOVO" | "RECEBIDO" | "SEPARADO" | "ENTREGUE"; itens: [materialId: string, quantidade: number][] }[];
+};
+
+export const PEDIDOS_EXEMPLO: PedidoExemplo[] = [
+  { cliente: "cnpj@teste.com", diasAtras: 0, lojas: [{ loja: "taguatinga", status: "NOVO", itens: [["cimento-cp2", 60], ["areia-media", 4]] }] },
+  { cliente: "cpf@teste.com", diasAtras: 1, lojas: [{ loja: "taguatinga", status: "NOVO", itens: [["tijolo-8-furos", 2], ["argamassa-ac1", 10]] }] },
+  {
+    cliente: "cnpj@teste.com",
+    diasAtras: 5,
+    lojas: [
+      { loja: "taguatinga", status: "SEPARADO", itens: [["vergalhao-10mm", 60]] },
+      { loja: "ceilandia", status: "ENTREGUE", itens: [["brita-1", 6], ["cimento-cp3", 40]] },
+    ],
+  },
+  {
+    cliente: "cpf@teste.com",
+    diasAtras: 12,
+    lojas: [
+      { loja: "aguas-claras", status: "ENTREGUE", itens: [["tinta-acrilica-18", 3]] },
+      { loja: "gama", status: "RECEBIDO", itens: [["areia-fina", 2]] },
+    ],
+  },
+];

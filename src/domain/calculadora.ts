@@ -151,3 +151,48 @@ export function escolherOfertaMaisBarata<O extends OfertaCandidata>(
   }
   return melhor;
 }
+
+// -----------------------------------------------------------------------------
+// "Tudo numa loja só"
+// -----------------------------------------------------------------------------
+
+export type LojaUnica<O> = {
+  storeId: string;
+  /** Escolha de cada material NESTA loja (null = a loja não vende o item) */
+  escolhas: Map<string, Escolha<O> | null>;
+  totalCents: number;
+  /** Quantos materiais da lista a loja tem */
+  cobertos: number;
+};
+
+/**
+ * Escolhe UMA loja para comprar a lista inteira: a que tem mais itens da lista
+ * (de preferência todos) e, entre essas, a de menor total.
+ */
+export function escolherLojaUnica<O extends OfertaCandidata & { storeId: string }>(
+  materiais: { produtoId: string; exato: number }[],
+  ofertasPorProduto: Map<string, O[]>,
+  papel: Papel | null,
+): LojaUnica<O> | null {
+  const lojas = new Set([...ofertasPorProduto.values()].flat().map((o) => o.storeId));
+  let melhor: LojaUnica<O> | null = null;
+
+  for (const storeId of lojas) {
+    const escolhas = new Map<string, Escolha<O> | null>();
+    let totalCents = 0;
+    let cobertos = 0;
+    for (const m of materiais) {
+      const daLoja = (ofertasPorProduto.get(m.produtoId) ?? []).filter((o) => o.storeId === storeId);
+      const escolha = escolherOfertaMaisBarata(m.exato, daLoja, papel);
+      escolhas.set(m.produtoId, escolha);
+      if (escolha) {
+        totalCents += escolha.totalCents;
+        cobertos++;
+      }
+    }
+    const ehMelhor =
+      !melhor || cobertos > melhor.cobertos || (cobertos === melhor.cobertos && totalCents < melhor.totalCents);
+    if (cobertos > 0 && ehMelhor) melhor = { storeId, escolhas, totalCents, cobertos };
+  }
+  return melhor;
+}
