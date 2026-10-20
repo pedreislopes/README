@@ -74,6 +74,17 @@ Ficam em `prisma/dados-teste.ts` (listas fáceis de editar) e são gravados por 
 - Frete: "a combinar com a loja" (campo já reservado no banco para o cálculo futuro).
 - Não há pagamento real: o pedido é registrado, dividido por loja, com a comissão de cada uma calculada.
 
+## Calculadora de obra
+
+- Serviços: muro de alvenaria, contrapiso, laje simples, reboco e assentamento de piso.
+- Mostra o cálculo passo a passo (ex.: "20 m² × 25 tijolos/m² = 500 + 10% de perda = 550 tijolos").
+- Arredonda sempre para cima no formato vendido e escolhe, para cada material, a oferta de menor
+  custo total (ex.: 550 tijolos avulsos podem sair mais baratos que 1 milheiro).
+- O cliente ajusta ou remove itens antes de montar o carrinho; materiais sem loja geram um aviso.
+- **Todos os coeficientes ficam em `src/config/calculadora.ts`**, com a fonte de cada número e a
+  referência SINAPI/TCPO a conferir. Os valores atuais são de prática de mercado e **aguardam revisão
+  de um engenheiro civil** (há um bloco `REVISAO` no topo do arquivo para registrar quem revisou).
+
 ## Onde fica cada coisa
 
 | Pasta | O que tem |

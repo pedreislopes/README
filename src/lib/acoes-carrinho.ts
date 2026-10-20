@@ -137,3 +137,35 @@ export async function finalizarPedido(): Promise<ResultadoAcao> {
 
   redirect(`/pedido/${compra.id}`);
 }
+
+/**
+ * Calculadora de obra: adiciona de uma vez a lista revisada pelo cliente
+ * (cada item já com a oferta mais barata e a quantidade escolhida).
+ */
+export async function montarCarrinhoDaCalculadora(
+  itens: { offerId: string; quantidade: number }[],
+): Promise<ResultadoAcao> {
+  if (itens.length === 0) return { erro: "Escolha pelo menos um material." };
+
+  // Confere tudo antes de gravar: ou entra a lista inteira, ou nada
+  const ofertas = [];
+  for (const { offerId, quantidade } of itens) {
+    const oferta = await ofertaAVenda(offerId);
+    if (!oferta) return { erro: "Um dos produtos ficou indisponível. Calcule de novo." };
+    const erro = validarQuantidade(quantidade, oferta.quantityStep);
+    if (erro) return { erro };
+    ofertas.push({ oferta, quantidade });
+  }
+
+  const cartId = (await idDoCarrinho(true))!;
+  await db.$transaction(
+    ofertas.map(({ oferta, quantidade }) =>
+      db.cartItem.upsert({
+        where: { cartId_offerId: { cartId, offerId: oferta.id } },
+        update: { quantity: { increment: quantidade } },
+        create: { cartId, offerId: oferta.id, quantity: quantidade, priceSnapshot: fotoDoPreco(oferta) },
+      }),
+    ),
+  );
+  redirect("/carrinho");
+}
