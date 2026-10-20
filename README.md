@@ -41,7 +41,7 @@ Ficam em `prisma/dados-teste.ts` (listas fáceis de editar) e são gravados por 
 | Asa Norte Materiais de Construção | Asa Norte | 3% | Vende cimento em saco de 25 kg e tijolo avulso |
 | Samambaia Depósito Popular | Samambaia | 0% | |
 | Gama Construções e Materiais | Gama | 5% | |
-| Sobradinho Casa & Obra | Sobradinho | 4% | **Em destaque (Patrocinado)**, nunca é a mais barata |
+| Sobradinho Casa & Obra | Sobradinho | 4% | **Oferta destaque** (com aviso "Patrocinado"), nunca é a mais barata |
 | Guará Material de Construção | Guará | 3% | |
 | Depósito Nova Era Vicente Pires | Vicente Pires | 5% | **Aguardando aprovação**, não aparece na busca |
 
