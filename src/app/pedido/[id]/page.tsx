@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CheckCircle2, MapPin, Phone, Truck } from "lucide-react";
-import { STATUS_PEDIDO, type StatusPedido } from "@/config/constantes";
+import { CancelarPedido } from "@/components/CancelarPedido";
+import { MOTIVOS_CANCELAMENTO, STATUS_PEDIDO, type StatusPedido } from "@/config/constantes";
+import { podeCancelar, resumirPedidos } from "@/domain/pedidos";
 import { formatarQuantidade, nomeDaEmbalagem } from "@/domain/quantidades";
 import { db } from "@/lib/db";
 import { formatarReais } from "@/lib/dinheiro";
@@ -28,6 +30,11 @@ export default async function Pedido(props: PageProps<"/pedido/[id]">) {
   });
   // Só o próprio cliente (ou o administrador) pode ver a compra
   if (!compra || (compra.userId !== usuario.id && usuario.role !== "ADMIN")) notFound();
+  const ehCliente = compra.userId === usuario.id;
+  // Totais sem os pedidos cancelados
+  const validos = compra.orders.filter((o) => o.status !== "CANCELADO");
+  const total = resumirPedidos(compra.orders).vendidoCents;
+  const economia = validos.reduce((s, o) => s + o.savingsCents, 0);
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
@@ -57,11 +64,21 @@ export default async function Pedido(props: PageProps<"/pedido/[id]">) {
                 <Phone className="h-3.5 w-3.5" /> {pedido.store.phone}
               </a>
             </div>
-            <span className="shrink-0 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-800">
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                pedido.status === "CANCELADO" ? "bg-slate-200 text-slate-700" : "bg-sky-100 text-sky-800"
+              }`}
+            >
               {STATUS_PEDIDO[pedido.status as StatusPedido] ?? pedido.status}
             </span>
           </header>
-          <ul className="divide-y divide-slate-100 text-sm">
+          {pedido.status === "CANCELADO" && (
+            <p className="bg-slate-100 px-4 py-2 text-sm text-slate-700">
+              Cancelado pel{pedido.canceledBy === "LOJA" ? "a loja" : pedido.canceledBy === "CLIENTE" ? "o cliente" : "a equipe Solid"}. Motivo:{" "}
+              {pedido.cancelReason}
+            </p>
+          )}
+          <ul className={`divide-y divide-slate-100 text-sm ${pedido.status === "CANCELADO" ? "opacity-60" : ""}`}>
             {pedido.items.map((item) => (
               <li key={item.id} className="flex justify-between gap-3 px-4 py-3">
                 <div>
@@ -97,21 +114,29 @@ export default async function Pedido(props: PageProps<"/pedido/[id]">) {
               <span>Subtotal</span>
               <span>{formatarReais(pedido.subtotalCents)}</span>
             </div>
+            {ehCliente && podeCancelar(pedido.status, "CLIENTE") && (
+              <div className="pt-2">
+                <CancelarPedido orderId={pedido.id} motivos={MOTIVOS_CANCELAMENTO.CLIENTE} />
+              </div>
+            )}
           </footer>
         </section>
       ))}
 
       <div className="space-y-1 rounded-2xl border border-slate-200 bg-white p-4">
-        {compra.savingsCents > 0 && (
+        {economia > 0 && (
           <p className="flex justify-between font-semibold text-emerald-700">
             <span>Você economizou</span>
-            <span>{formatarReais(compra.savingsCents)}</span>
+            <span>{formatarReais(economia)}</span>
           </p>
         )}
         <p className="flex justify-between text-lg font-extrabold">
           <span>Total (sem frete)</span>
-          <span>{formatarReais(compra.totalCents)}</span>
+          <span>{formatarReais(total)}</span>
         </p>
+        {validos.length < compra.orders.length && (
+          <p className="text-xs text-slate-500">Pedidos cancelados não entram no total.</p>
+        )}
         <p className="text-xs text-slate-500">Pagamento combinado diretamente com cada loja (simulação, sem cobrança).</p>
       </div>
 

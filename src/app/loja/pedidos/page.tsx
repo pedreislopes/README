@@ -1,8 +1,10 @@
 // Pedidos recebidos pela loja, com o valor da comissão de cada um.
 import Link from "next/link";
 import { Phone } from "lucide-react";
-import { STATUS_PEDIDO, type StatusPedido } from "@/config/constantes";
+import { CancelarPedido } from "@/components/CancelarPedido";
+import { MOTIVOS_CANCELAMENTO, STATUS_PEDIDO, type StatusPedido } from "@/config/constantes";
 import { PROXIMO_STATUS } from "@/domain/ofertas";
+import { comissaoEfetiva, podeCancelar } from "@/domain/pedidos";
 import { formatarQuantidade, nomeDaEmbalagem } from "@/domain/quantidades";
 import { db } from "@/lib/db";
 import { formatarReais } from "@/lib/dinheiro";
@@ -17,6 +19,7 @@ const CORES: Record<StatusPedido, string> = {
   RECEBIDO: "bg-sky-100 text-sky-800",
   SEPARADO: "bg-amber-100 text-amber-800",
   ENTREGUE: "bg-emerald-100 text-emerald-800",
+  CANCELADO: "bg-slate-200 text-slate-700",
 };
 
 export default async function PedidosLoja(props: PageProps<"/loja/pedidos">) {
@@ -59,6 +62,8 @@ export default async function PedidosLoja(props: PageProps<"/loja/pedidos">) {
         const st = p.status as StatusPedido;
         const proximo = PROXIMO_STATUS[st];
         const cliente = p.purchase.user;
+        const cancelado = st === "CANCELADO";
+        const comissao = comissaoEfetiva(p);
         return (
           <article key={p.id} className={`rounded-2xl border bg-white ${st === "NOVO" ? "border-red-300 ring-1 ring-red-300" : "border-slate-200"}`}>
             <header className="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
@@ -98,18 +103,26 @@ export default async function PedidosLoja(props: PageProps<"/loja/pedidos">) {
                 ))}
               </ul>
 
-              <dl className="space-y-1 text-sm">
+              {cancelado && (
+                <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
+                  <strong>Cancelado</strong> pel{p.canceledBy === "LOJA" ? "a loja" : p.canceledBy === "CLIENTE" ? "o cliente" : "a equipe Solid"}
+                  {p.canceledAt ? ` em ${p.canceledAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}. Motivo:{" "}
+                  {p.cancelReason}
+                </p>
+              )}
+
+              <dl className={`space-y-1 text-sm ${cancelado ? "opacity-60" : ""}`}>
                 <div className="flex justify-between">
                   <dt>Valor do pedido</dt>
                   <dd className="font-bold">{formatarReais(p.subtotalCents)}</dd>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <dt>Comissão Solid ({p.commissionPercent.toLocaleString("pt-BR")}%)</dt>
-                  <dd>− {formatarReais(p.commissionCents)}</dd>
+                  <dd>{cancelado ? "R$ 0,00 (cancelado)" : `− ${formatarReais(comissao)}`}</dd>
                 </div>
                 <div className="flex justify-between border-t border-slate-100 pt-1 font-bold text-emerald-700">
                   <dt>Você recebe</dt>
-                  <dd>{formatarReais(p.subtotalCents - p.commissionCents)}</dd>
+                  <dd>{cancelado ? "—" : formatarReais(p.subtotalCents - comissao)}</dd>
                 </div>
                 <div className="flex justify-between text-xs text-slate-500">
                   <dt>Frete</dt>
@@ -118,6 +131,7 @@ export default async function PedidosLoja(props: PageProps<"/loja/pedidos">) {
               </dl>
 
               {proximo && <BotaoAvancar orderId={p.id} rotulo={`Marcar como ${STATUS_PEDIDO[proximo]}`} />}
+              {podeCancelar(st, "LOJA") && <CancelarPedido orderId={p.id} motivos={MOTIVOS_CANCELAMENTO.LOJA} />}
             </div>
           </article>
         );

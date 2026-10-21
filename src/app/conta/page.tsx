@@ -88,6 +88,12 @@ export default async function Conta() {
         </p>
       )}
 
+      {usuario.role === "ADMIN" && (
+        <Link href="/admin" className="block rounded-xl bg-slate-900 py-3 text-center font-semibold text-white">
+          Abrir painel do administrador
+        </Link>
+      )}
+
       {(usuario.role === "CPF" || usuario.role === "CNPJ") && (
         <Link
           href="/meus-pedidos"

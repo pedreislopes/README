@@ -36,12 +36,14 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const usuario = await usuarioAtual();
   const itensNoCarrinho = await contarItensDoCarrinho();
-  // Lojista: número de pedidos novos no menu
-  const pedidosNovos =
+  // Número no menu: pedidos novos (lojista) ou lojas aguardando aprovação (administrador)
+  const pendencias =
     usuario?.role === "LOJISTA"
       ? await db.order.count({ where: { status: "NOVO", store: { ownerId: usuario.id } } })
-      : null;
-  const menu = { nomeUsuario: usuario?.name ?? null, itensNoCarrinho, pedidosNovos };
+      : usuario?.role === "ADMIN"
+        ? await db.store.count({ where: { status: "PENDENTE" } })
+        : 0;
+  const menu = { nomeUsuario: usuario?.name ?? null, papel: usuario?.role ?? null, itensNoCarrinho, pendencias };
   return (
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">

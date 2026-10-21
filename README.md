@@ -98,7 +98,29 @@ Ficam em `prisma/dados-teste.ts` (listas fáceis de editar) e são gravados por 
   lojista nunca vê nem altera produtos ou pedidos de outra loja.
 - Loja pendente acessa o painel e cadastra produtos, com o aviso "Sua loja ainda não aparece na busca.
   Aguardando aprovação."
-- Os dados de teste incluem 6 pedidos de exemplo (2 novos na loja de `lojista@teste.com`).
+- **Sugerir material**: o lojista sugere um material que não está no catálogo; o administrador aprova
+  (corrigindo nome/categoria se preciso) ou recusa com motivo.
+- Os dados de teste incluem 6 pedidos de exemplo (2 novos na loja de `lojista@teste.com`) e uma
+  sugestão de material aguardando análise.
+
+## Cancelamento de pedidos
+
+- Cliente e loja podem cancelar enquanto o pedido **não estiver "Separado"**; o administrador pode
+  cancelar a qualquer momento. Sempre com **motivo** (lista de motivos + "Outro", que exige explicação).
+- Pedido cancelado **não gera comissão** e não entra em vendas nem relatórios de comissão.
+
+## Painel do administrador (`/admin`, entre com `admin@teste.com`)
+
+- **Indicadores**: total vendido, total de comissões, número de pedidos (e cancelados), lojas ativas e
+  pendentes, sugestões de material.
+- **Lojas**: aprovar ou **recusar com motivo** as pendentes; **suspender com motivo** uma loja ativa (some da
+  busca, mas mantém produtos, pedidos e histórico) e reativar; editar a **comissão** (vale só para pedidos
+  novos: cada pedido guarda a própria %); ligar/desligar a **Oferta destaque**.
+- **Pedidos e comissões**: relatório filtrável por período, loja e situação, com **download em planilha
+  (CSV)** que abre direto no Excel.
+- **Materiais**: aprovar/recusar sugestões dos lojistas e incluir materiais novos no catálogo.
+- **Registro (auditoria)**: toda ação do administrador fica registrada — quem fez, o quê e quando —
+  inclusive o download de planilhas. O site não tem opção de apagar o registro.
 
 ## Onde fica cada coisa
 

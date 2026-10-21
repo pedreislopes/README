@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronRight, Package } from "lucide-react";
+import { resumirPedidos } from "@/domain/pedidos";
 import { db } from "@/lib/db";
 import { formatarReais } from "@/lib/dinheiro";
 import { numeroDoPedido } from "@/lib/pedidos";
@@ -43,7 +44,7 @@ export default async function MeusPedidos() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{formatarReais(c.totalCents)}</span>
+                  <span className="font-semibold">{formatarReais(resumirPedidos(c.orders).vendidoCents)}</span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </div>
               </Link>

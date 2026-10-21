@@ -20,10 +20,16 @@ export default async function LayoutLoja({ children }: LayoutProps<"/loja">) {
           Sua loja ainda não aparece na busca. Aguardando aprovação.
         </p>
       )}
-      {loja.status === "BLOQUEADA" && (
-        <p role="status" className="rounded-xl border border-red-300 bg-red-50 p-3 font-semibold text-red-800">
-          Sua loja está bloqueada e não aparece na busca. Fale com a equipe Solid.
-        </p>
+      {(loja.status === "SUSPENSA" || loja.status === "RECUSADA") && (
+        <div role="status" className="rounded-xl border border-red-300 bg-red-50 p-3 text-red-800">
+          <p className="font-semibold">
+            {loja.status === "SUSPENSA"
+              ? "Sua loja está suspensa e não aparece na busca. Seus pedidos e produtos continuam guardados."
+              : "O cadastro da sua loja não foi aprovado."}
+          </p>
+          {loja.statusReason && <p className="mt-1 text-sm">Motivo: {loja.statusReason}</p>}
+          <p className="mt-1 text-sm">Em caso de dúvida, fale com a equipe Solid.</p>
+        </div>
       )}
       <AbasLoja novos={novos} />
       {children}

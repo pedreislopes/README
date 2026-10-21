@@ -13,8 +13,9 @@ export default async function PainelLoja() {
     contarPedidosNovos(loja.id),
     db.offer.count({ where: { storeId: loja.id, active: true } }),
     db.offer.count({ where: { storeId: loja.id, active: false } }),
+    // Pedidos cancelados não contam nas vendas nem geram comissão
     db.order.aggregate({
-      where: { storeId: loja.id },
+      where: { storeId: loja.id, status: { not: "CANCELADO" } },
       _sum: { subtotalCents: true, commissionCents: true },
       _count: true,
     }),

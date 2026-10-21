@@ -56,8 +56,9 @@ export type Papel = keyof typeof PAPEIS;
 /** Situação da loja na plataforma */
 export const STATUS_LOJA = {
   PENDENTE: "Aguardando aprovação",
-  APROVADA: "Aprovada",
-  BLOQUEADA: "Bloqueada",
+  APROVADA: "Ativa",
+  RECUSADA: "Recusada",
+  SUSPENSA: "Suspensa",
 } as const;
 export type StatusLoja = keyof typeof STATUS_LOJA;
 
@@ -67,8 +68,16 @@ export const STATUS_PEDIDO = {
   RECEBIDO: "Recebido",
   SEPARADO: "Separado",
   ENTREGUE: "Entregue",
+  CANCELADO: "Cancelado",
 } as const;
 export type StatusPedido = keyof typeof STATUS_PEDIDO;
+
+/** Motivos de cancelamento oferecidos na tela ("Outro" pede texto livre) */
+export const MOTIVOS_CANCELAMENTO = {
+  LOJA: ["Sem estoque", "Não entregamos nessa região", "Não conseguimos contato com o cliente", "Outro"],
+  CLIENTE: ["Desisti da compra", "Encontrei mais barato", "Pedido feito por engano", "Outro"],
+  ADMIN: ["Solicitação do cliente", "Solicitação da loja", "Suspeita de fraude", "Outro"],
+} as const;
 
 /**
  * Textos da loja em destaque (anúncio pago).

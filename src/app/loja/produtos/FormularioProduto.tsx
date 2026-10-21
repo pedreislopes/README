@@ -80,7 +80,12 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
           ))}
         </select>
         <MensagemErro erro={e.productId} />
-        <p className="mt-1 text-xs text-slate-500">Não achou o material? Fale com a equipe Solid para incluí-lo no catálogo.</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Não achou o material?{" "}
+          <Link href="/loja/sugerir" className="font-semibold text-marca-700 underline">
+            Sugerir material
+          </Link>
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

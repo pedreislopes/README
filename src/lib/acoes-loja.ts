@@ -7,7 +7,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import type { StatusPedido } from "@/config/constantes";
+import { CATEGORIAS, UNIDADES_BASE, type StatusPedido } from "@/config/constantes";
 import { PROXIMO_STATUS, reajustarPreco, validarOferta, validarPercentual, type ErrosOferta } from "@/domain/ofertas";
 import { db } from "./db";
 import { reaisParaCentavos } from "./dinheiro";
@@ -152,4 +152,36 @@ export async function avancarStatus(orderId: string): Promise<ResultadoLoja> {
   await db.order.updateMany({ where: { id: orderId, storeId: loja.id, status: pedido.status }, data: { status: proximo } });
   refresh();
   return { ok: true };
+}
+
+// -----------------------------------------------------------------------------
+// Sugestão de material novo para o catálogo (o administrador aprova ou recusa)
+// -----------------------------------------------------------------------------
+export type EstadoSugestao = {
+  erro?: string;
+  ok?: boolean;
+  resposta?: number;
+  /** O que foi digitado, para não apagar o formulário quando há erro */
+  enviado?: Record<string, string>;
+};
+
+export async function sugerirMaterial(_anterior: EstadoSugestao, form: FormData): Promise<EstadoSugestao> {
+  const { loja } = await exigirLoja();
+  const name = String(form.get("nome") ?? "").trim();
+  const category = String(form.get("categoria") ?? "");
+  const baseUnit = String(form.get("unidade") ?? "");
+  const note = String(form.get("observacao") ?? "").trim().slice(0, 500) || null;
+  const enviado = Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)]));
+
+  if (name.length < 3) return { erro: "Informe o nome do material.", resposta: Date.now(), enviado };
+  if (!(CATEGORIAS as readonly string[]).includes(category)) return { erro: "Escolha a categoria.", resposta: Date.now(), enviado };
+  if (!(baseUnit in UNIDADES_BASE)) return { erro: "Escolha como o preço deve ser comparado.", resposta: Date.now(), enviado };
+
+  // Evita a mesma loja mandar a mesma sugestão duas vezes
+  const repetida = await db.materialSuggestion.findFirst({ where: { storeId: loja.id, name, status: "PENDENTE" } });
+  if (repetida) return { erro: "Você já enviou esta sugestão. Aguarde a análise.", resposta: Date.now(), enviado };
+
+  await db.materialSuggestion.create({ data: { storeId: loja.id, name, category, baseUnit, note } });
+  refresh();
+  return { ok: true, resposta: Date.now() };
 }

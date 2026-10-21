@@ -123,7 +123,7 @@ describe("montarCarrinho", () => {
   });
 
   it("marca indisponível e não soma quando a loja saiu do ar", () => {
-    const fora = { id: "C", status: "BLOQUEADA", commissionPercent: 5 };
+    const fora = { id: "C", status: "SUSPENSA", commissionPercent: 5 };
     const c = montarCarrinho([item("1", areia, fora, 1)], "CPF", PERTO);
     expect(c.indisponiveis).toBe(1);
     expect(c.totalCents).toBe(0);

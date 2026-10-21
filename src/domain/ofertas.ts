@@ -78,4 +78,5 @@ export const PROXIMO_STATUS: Record<StatusPedido, StatusPedido | null> = {
   RECEBIDO: "SEPARADO",
   SEPARADO: "ENTREGUE",
   ENTREGUE: null,
+  CANCELADO: null,
 };

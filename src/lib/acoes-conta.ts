@@ -73,7 +73,7 @@ export async function entrar(_anterior: EstadoLogin, form: FormData): Promise<Es
   await db.loginAttempt.deleteMany({ where: { key: chaves[0] } });
   await criarSessao(usuario.id);
   await juntarCarrinhoDoVisitante(usuario.id);
-  const inicial = usuario.role === "LOJISTA" ? "/loja" : usuario.role === "ADMIN" ? "/conta" : "/";
+  const inicial = usuario.role === "LOJISTA" ? "/loja" : usuario.role === "ADMIN" ? "/admin" : "/";
   redirect(destinoSeguro(form.get("voltar"), inicial));
 }
 

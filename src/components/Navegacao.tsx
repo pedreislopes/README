@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Calculator, Home, Search, ShoppingCart, Store, User } from "lucide-react";
+import { ClipboardList, Calculator, Home, LayoutDashboard, Search, ShoppingCart, Store, User } from "lucide-react";
 import { Logo } from "./Logo";
 
 const LINKS_CLIENTE = [
@@ -26,19 +26,30 @@ const LINKS_LOJISTA = [
   { href: "/conta", rotulo: "Conta", Icone: User },
 ];
 
+/** O administrador vê o painel e as lojas (com o número de lojas pendentes) */
+const LINKS_ADMIN = [
+  { href: "/", rotulo: "Início", Icone: Home },
+  { href: "/busca", rotulo: "Buscar", Icone: Search },
+  { href: "/admin", rotulo: "Painel", Icone: LayoutDashboard },
+  { href: "/admin/lojas", rotulo: "Lojas", Icone: Store },
+  { href: "/conta", rotulo: "Conta", Icone: User },
+];
+
 export type DadosMenu = {
   nomeUsuario: string | null;
+  papel: "CPF" | "CNPJ" | "LOJISTA" | "ADMIN" | null;
   itensNoCarrinho: number;
-  /** Preenchido só para lojista: pedidos com status "Novo" */
-  pedidosNovos: number | null;
+  /** Lojista: pedidos "Novo"; administrador: lojas pendentes */
+  pendencias: number;
 };
 
-const linksDo = (menu: DadosMenu) => (menu.pedidosNovos === null ? LINKS_CLIENTE : LINKS_LOJISTA);
+const linksDo = (menu: DadosMenu) =>
+  menu.papel === "LOJISTA" ? LINKS_LOJISTA : menu.papel === "ADMIN" ? LINKS_ADMIN : LINKS_CLIENTE;
 
-/** Número que aparece no ícone: itens do carrinho ou pedidos novos da loja */
+/** Número que aparece no ícone: itens do carrinho, pedidos novos ou lojas pendentes */
 function contadorDo(href: string, menu: DadosMenu) {
   if (href === "/carrinho") return menu.itensNoCarrinho;
-  if (href === "/loja/pedidos") return menu.pedidosNovos ?? 0;
+  if (href === "/loja/pedidos" || href === "/admin/lojas") return menu.pendencias;
   return 0;
 }
 

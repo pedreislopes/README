@@ -29,6 +29,9 @@ export default async function ProdutosLoja(props: PageProps<"/loja/produtos">) {
       >
         <Plus className="h-5 w-5" /> Cadastrar produto
       </Link>
+      <Link href="/loja/sugerir" className="block text-center text-sm font-semibold text-marca-700">
+        Não encontrou um material no catálogo? Sugerir material
+      </Link>
       {ofertas.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
           Você ainda não cadastrou produtos.

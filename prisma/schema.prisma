@@ -71,7 +71,7 @@ model LoginAttempt {
 // Lojas e produtos
 // -----------------------------------------------------------------------------
 model Store {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   name              String
   /// CNPJ da loja, só os números
   cnpj              String
@@ -79,19 +79,23 @@ model Store {
   region            String
   address           String
   phone             String
-  /// "PENDENTE" | "APROVADA" | "BLOQUEADA" — só lojas APROVADAS aparecem na busca
-  status            String   @default("PENDENTE")
+  /// "PENDENTE" | "APROVADA" (ativa) | "RECUSADA" | "SUSPENSA" — só APROVADAS aparecem na busca
+  status            String    @default("PENDENTE")
+  /// Motivo da última mudança de situação (recusa ou suspensão)
+  statusReason      String?
+  statusChangedAt   DateTime?
   /// Comissão cobrada pela plataforma, em % (ex.: 8.5 = 8,5%)
-  commissionPercent Float    @default(10)
+  commissionPercent Float     @default(10)
   /// Loja em destaque: aparece no topo da busca como "Patrocinado"
-  featured          Boolean  @default(false)
-  createdAt         DateTime @default(now())
+  featured          Boolean   @default(false)
+  createdAt         DateTime  @default(now())
 
   ownerId String @unique
   owner   User   @relation(fields: [ownerId], references: [id])
 
-  offers Offer[]
-  orders Order[]
+  offers      Offer[]
+  orders      Order[]
+  suggestions MaterialSuggestion[]
 }
 
 /// Material do catálogo geral (ex.: "Cimento CP II").
@@ -201,20 +205,25 @@ model Purchase {
 
 /// Pedido recebido por UMA loja.
 model Order {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   purchaseId        String
   storeId           String
-  /// "NOVO" | "RECEBIDO" | "SEPARADO" | "ENTREGUE"
-  status            String   @default("NOVO")
+  /// "NOVO" | "RECEBIDO" | "SEPARADO" | "ENTREGUE" | "CANCELADO"
+  status            String    @default("NOVO")
+  /// Cancelamento: quem cancelou ("CLIENTE" | "LOJA" | "ADMIN"), quando e por quê.
+  /// Pedido cancelado não gera comissão.
+  canceledBy        String?
+  canceledAt        DateTime?
+  cancelReason      String?
   subtotalCents     Int
-  savingsCents      Int      @default(0)
+  savingsCents      Int       @default(0)
   /// Cópia da % de comissão no momento do pedido
   commissionPercent Float
   commissionCents   Int
   /// Frete em centavos. NULO = "a combinar com a loja" (cálculo de frete virá depois)
   freightCents      Int?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   purchase Purchase    @relation(fields: [purchaseId], references: [id])
   store    Store       @relation(fields: [storeId], references: [id])
@@ -239,4 +248,47 @@ model OrderItem {
 
   order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   offer Offer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+}
+
+// -----------------------------------------------------------------------------
+// Catálogo: sugestões de materiais novos (lojista sugere, administrador decide)
+// -----------------------------------------------------------------------------
+model MaterialSuggestion {
+  id         String    @id @default(cuid())
+  storeId    String
+  name       String
+  category   String
+  /// Unidade de comparação sugerida: "kg" | "m3" | "m2" | "un" | "m" | "l"
+  baseUnit   String
+  note       String?
+  /// "PENDENTE" | "APROVADA" | "RECUSADA"
+  status     String    @default("PENDENTE")
+  /// Resposta do administrador (motivo da recusa, por exemplo)
+  reviewNote String?
+  reviewedAt DateTime?
+  /// Material criado no catálogo quando a sugestão é aprovada
+  productId  String?
+  createdAt  DateTime  @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------------------------
+// Auditoria: registro de TODAS as ações do administrador (não pode ser apagado pelo site)
+// -----------------------------------------------------------------------------
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  /// Cópia do nome, para o registro continuar legível mesmo se a conta mudar
+  adminName  String
+  /// Código da ação, ex.: "LOJA_APROVADA", "COMISSAO_ALTERADA"
+  action     String
+  /// O que foi afetado, ex.: "Store" + id da loja
+  targetType String
+  targetId   String
+  /// Descrição legível, ex.: "Comissão de 3% para 4%"
+  details    String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
 }

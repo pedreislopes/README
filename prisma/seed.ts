@@ -107,6 +107,8 @@ function sortearFatores(lojasAprovadas: string[], idDestaque: string) {
 
 async function main() {
   console.log("Limpando o banco…");
+  await db.adminLog.deleteMany();
+  await db.materialSuggestion.deleteMany();
   await db.cartItem.deleteMany();
   await db.cart.deleteMany();
   await db.orderItem.deleteMany();
@@ -250,6 +252,17 @@ async function main() {
   }
 
   await criarPedidosDeExemplo();
+
+  // Sugestão de material aguardando o administrador
+  await db.materialSuggestion.create({
+    data: {
+      storeId: "taguatinga",
+      name: "Bloco de concreto estrutural 19x19x39 cm",
+      category: "Tijolos e blocos",
+      baseUnit: "un",
+      note: "Muito pedido por construtoras de Taguatinga.",
+    },
+  });
   await conferir(idDestaque);
 }
 
