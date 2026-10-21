@@ -36,7 +36,12 @@ export type GrupoDeProduto<P, O> = {
 
 export type Resultados<P, O> = {
   grupos: GrupoDeProduto<P, O>[];
-  patrocinado: { produto: P; oferta: O } | null;
+  /**
+   * Lojas em destaque que vendem o produto MAIS relevante da busca (uma oferta
+   * por loja, a de melhor preço por unidade), da mais barata para a mais cara.
+   * Quais aparecem no topo é decidido por escolherAnunciosEmRodizio().
+   */
+  destaque: { produto: P; candidatas: O[] } | null;
 };
 
 const porUnidade = (o: OfertaPrecificavel) => precoPorUnidadeBase(o.priceCents, o.baseQuantity);
@@ -71,16 +76,39 @@ export function montarResultados<P extends { id: string }, O extends OfertaDaBus
     grupos.push({ produto, ofertas: doProduto, melhorPrecoId: melhor.id });
   }
 
-  // Patrocinado: a oferta de uma loja em destaque no produto MAIS relevante
-  // que ela realmente vende (respeitando os filtros). Nunca inventa um produto.
-  let patrocinado: Resultados<P, O>["patrocinado"] = null;
+  // Oferta destaque: lojas em destaque no produto MAIS relevante que elas
+  // realmente vendem (respeitando os filtros). Nunca inventa um produto.
+  let destaque: Resultados<P, O>["destaque"] = null;
   for (const grupo of grupos) {
-    const emDestaque = grupo.ofertas.filter((o) => o.store.featured).sort(comparar);
-    if (emDestaque.length > 0) {
-      patrocinado = { produto: grupo.produto, oferta: emDestaque[0] };
+    const melhorPorLoja = new Map<string, O>();
+    for (const o of grupo.ofertas.filter((x) => x.store.featured)) {
+      const atual = melhorPorLoja.get(o.store.id);
+      if (!atual || porUnidade(o) < porUnidade(atual)) melhorPorLoja.set(o.store.id, o);
+    }
+    if (melhorPorLoja.size > 0) {
+      const candidatas = [...melhorPorLoja.values()].sort(
+        (a, b) => porUnidade(a) - porUnidade(b) || a.store.id.localeCompare(b.store.id),
+      );
+      destaque = { produto: grupo.produto, candidatas };
       break;
     }
   }
 
-  return { grupos, patrocinado };
+  return { grupos, destaque };
+}
+
+/**
+ * Escolhe quais ofertas destaque aparecem no topo.
+ * - Até "max" candidatas: todas, da mais barata para a mais cara.
+ * - Mais que "max": rodízio. As candidatas ficam em roda (ordenadas por preço) e,
+ *   a cada busca ("rodada"), a janela de "max" vagas anda uma posição.
+ *   Em N rodadas seguidas (N = número de lojas), cada loja aparece exatamente
+ *   "max" vezes. As escolhidas são mostradas da mais barata para a mais cara.
+ */
+export function escolherAnunciosEmRodizio<O extends OfertaDaBusca>(candidatas: O[], max: number, rodada: number): O[] {
+  if (candidatas.length <= max) return candidatas;
+  const n = candidatas.length;
+  const inicio = ((rodada % n) + n) % n;
+  const escolhidas = Array.from({ length: max }, (_, i) => candidatas[(inicio + i) % n]);
+  return escolhidas.sort((a, b) => candidatas.indexOf(a) - candidatas.indexOf(b));
 }

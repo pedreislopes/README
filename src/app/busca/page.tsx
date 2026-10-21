@@ -6,7 +6,9 @@ import { FiltrosBusca, type ValoresFiltros } from "@/components/FiltrosBusca";
 import { CATEGORIAS, REGIOES } from "@/config/constantes";
 import { MATERIAIS_POPULARES } from "@/config/sinonimos";
 import { buscarProdutos } from "@/domain/busca";
-import { montarResultados, type Ordem } from "@/domain/resultados";
+import { MAX_ANUNCIOS_NO_TOPO } from "@/config/anuncios";
+import { escolherAnunciosEmRodizio, montarResultados, type Ordem } from "@/domain/resultados";
+import { proximaRodada } from "@/lib/anuncios";
 import { carregarCatalogo } from "@/lib/catalogo";
 import { reaisParaCentavos } from "@/lib/dinheiro";
 import { usuarioAtual } from "@/lib/sessao";
@@ -40,12 +42,21 @@ export default async function Busca(props: PageProps<"/busca">) {
   const { encontrados, sugeridos } = buscarProdutos(produtos, valores.q);
   const naCategoria = encontrados.filter((p) => !valores.categoria || p.category === valores.categoria);
 
-  const { grupos, patrocinado } = montarResultados(naCategoria, ofertas, {
+  const { grupos, destaque } = montarResultados(naCategoria, ofertas, {
     ordem: valores.ordem as Ordem,
     regiao: valores.regiao || undefined,
     precoMin: reaisParaCentavos(valores.min) ?? undefined,
     precoMax: reaisParaCentavos(valores.max) ?? undefined,
   });
+
+  // Ofertas destaque no topo (até MAX_ANUNCIOS_NO_TOPO; acima disso, rodízio)
+  const anuncios = destaque
+    ? escolherAnunciosEmRodizio(
+        destaque.candidatas,
+        MAX_ANUNCIOS_NO_TOPO,
+        destaque.candidatas.length > MAX_ANUNCIOS_NO_TOPO ? proximaRodada(destaque.produto.id) : 0,
+      )
+    : [];
 
   // Sugestões quando nada foi encontrado: parecidos, ou os mais procurados
   const sugestoes =
@@ -110,15 +121,17 @@ export default async function Busca(props: PageProps<"/busca">) {
             </p>
           )}
 
-          {patrocinado && (
-            <CartaoOferta
-              oferta={patrocinado.oferta}
-              unidadeBase={patrocinado.produto.baseUnit}
-              papel={papel}
-              patrocinado
-              nomeProduto={patrocinado.produto.name}
-            />
-          )}
+          {destaque &&
+            anuncios.map((oferta) => (
+              <CartaoOferta
+                key={`destaque-${oferta.id}`}
+                oferta={oferta}
+                unidadeBase={destaque.produto.baseUnit}
+                papel={papel}
+                patrocinado
+                nomeProduto={destaque.produto.name}
+              />
+            ))}
 
           {grupos.map(({ produto, ofertas: doProduto, melhorPrecoId }) => {
             const limite = grupos.length === 1 ? doProduto.length : OFERTAS_POR_PRODUTO;
