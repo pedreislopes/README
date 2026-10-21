@@ -154,7 +154,8 @@ export type LojaTeste = {
   endereco: string;
   telefone: string;
   comissao: number;
-  destaque?: boolean;
+  /** Plano de anúncio no topo da busca */
+  plano?: "DESTAQUE" | "PREMIUM";
   status: "APROVADA" | "PENDENTE";
   /** Dono da loja (usuário lojista) */
   dono: { nome: string; email: string };
@@ -167,8 +168,8 @@ export const LOJAS: LojaTeste[] = [
   { id: "asa-norte", nome: "Asa Norte Materiais de Construção", regiao: "Asa Norte", endereco: "SCLN 711, Bloco C, Loja 10 — Asa Norte", telefone: "(61) 3272-4410", comissao: 3, status: "APROVADA", dono: { nome: "Fernando Lima", email: "asanorte@teste.com" } },
   { id: "samambaia", nome: "Samambaia Depósito Popular", regiao: "Samambaia", endereco: "QR 425, Conjunto 3, Lote 1 — Samambaia Norte", telefone: "(61) 3358-6677", comissao: 0, status: "APROVADA", dono: { nome: "Antônia Souza", email: "samambaia@teste.com" } },
   { id: "gama", nome: "Gama Construções e Materiais", regiao: "Gama", endereco: "Setor Leste Industrial, Quadra 4 — Gama", telefone: "(61) 3384-2255", comissao: 5, status: "APROVADA", dono: { nome: "Paulo Ribeiro", email: "gama@teste.com" } },
-  { id: "sobradinho", nome: "Sobradinho Casa & Obra", regiao: "Sobradinho", endereco: "Quadra 8, Área Especial 3 — Sobradinho", telefone: "(61) 3591-3030", comissao: 4, destaque: true, status: "APROVADA", dono: { nome: "Marcos Teixeira", email: "sobradinho@teste.com" } },
-  { id: "guara", nome: "Guará Material de Construção", regiao: "Guará", endereco: "QE 40, Conjunto H, Lote 8 — Guará II", telefone: "(61) 3381-9090", comissao: 3, status: "APROVADA", dono: { nome: "Luciana Castro", email: "guara@teste.com" } },
+  { id: "sobradinho", nome: "Sobradinho Casa & Obra", regiao: "Sobradinho", endereco: "Quadra 8, Área Especial 3 — Sobradinho", telefone: "(61) 3591-3030", comissao: 4, plano: "DESTAQUE", status: "APROVADA", dono: { nome: "Marcos Teixeira", email: "sobradinho@teste.com" } },
+  { id: "guara", nome: "Guará Material de Construção", regiao: "Guará", endereco: "QE 40, Conjunto H, Lote 8 — Guará II", telefone: "(61) 3381-9090", comissao: 3, plano: "PREMIUM", status: "APROVADA", dono: { nome: "Luciana Castro", email: "guara@teste.com" } },
   // Loja que acabou de se cadastrar: aguardando aprovação no /admin
   { id: "vicente-pires", nome: "Depósito Nova Era Vicente Pires", regiao: "Vicente Pires", endereco: "Rua 4C, Chácara 22 — Vicente Pires", telefone: "(61) 3397-1515", comissao: 5, status: "PENDENTE", dono: { nome: "Rogério Nunes", email: "pendente@teste.com" } },
 ];

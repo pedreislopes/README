@@ -1,6 +1,7 @@
 // Início do painel: aviso de pedidos novos e números da loja.
 import Link from "next/link";
-import { Bell, ChevronRight, PackageCheck, PackageX, Plus } from "lucide-react";
+import { Bell, ChevronRight, Crown, Megaphone, PackageCheck, PackageX, Plus, Sparkles } from "lucide-react";
+import { PLANOS_ANUNCIO, type PlanoAnuncio } from "@/config/constantes";
 import { db } from "@/lib/db";
 import { formatarReais } from "@/lib/dinheiro";
 import { contarPedidosNovos, exigirLoja } from "@/lib/loja";
@@ -61,6 +62,28 @@ export default async function PainelLoja() {
           Comissão Solid ({loja.commissionPercent.toLocaleString("pt-BR")}%):{" "}
           <strong>{formatarReais(vendas._sum.commissionCents ?? 0)}</strong>
         </p>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        {loja.adPlan === "PREMIUM" ? (
+          <Crown className="h-6 w-6 shrink-0 text-violet-700" />
+        ) : loja.adPlan === "DESTAQUE" ? (
+          <Sparkles className="h-6 w-6 shrink-0 text-amber-600" />
+        ) : (
+          <Megaphone className="h-6 w-6 shrink-0 text-slate-400" />
+        )}
+        <div>
+          <p className="text-sm text-slate-600">Plano de anúncio</p>
+          <p className="text-lg font-extrabold">{PLANOS_ANUNCIO[loja.adPlan as PlanoAnuncio] ?? loja.adPlan}</p>
+          <p className="text-sm text-slate-600">
+            {loja.adPlan === "PREMIUM"
+              ? "Seus produtos têm prioridade nas vagas do topo da busca, com o emblema “Oferta premium”."
+              : loja.adPlan === "DESTAQUE"
+                ? "Seus produtos podem aparecer no topo da busca com o selo “Oferta destaque”."
+                : "Sua loja aparece na busca normal, ordenada por preço."}{" "}
+            Para mudar de plano, fale com a equipe Solid.
+          </p>
+        </div>
       </div>
 
       <Link

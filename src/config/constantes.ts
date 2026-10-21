@@ -80,12 +80,25 @@ export const MOTIVOS_CANCELAMENTO = {
 } as const;
 
 /**
- * Textos da loja em destaque (anúncio pago).
+ * Planos de anúncio no topo da busca (escolhidos pelo administrador).
+ * Premium tem prioridade sobre Destaque nas vagas do topo.
+ */
+export const PLANOS_ANUNCIO = {
+  NENHUM: "Nenhum",
+  DESTAQUE: "Destaque",
+  PREMIUM: "Premium",
+} as const;
+export type PlanoAnuncio = keyof typeof PLANOS_ANUNCIO;
+export type PlanoPago = Exclude<PlanoAnuncio, "NENHUM">;
+
+/**
+ * Textos dos anúncios (Destaque e Premium).
  * Pelo Código de Defesa do Consumidor (art. 36), publicidade precisa ser
  * facilmente identificável: a palavra "Patrocinado" fica SEMPRE visível.
  */
 export const DESTAQUE = {
   selo: "Oferta destaque",
+  seloPremium: "Oferta premium",
   aviso: "Patrocinado",
   explicacao:
     "Esta loja paga para aparecer em destaque. O selo Melhor preço indica a oferta mais barata de verdade.",

@@ -15,6 +15,8 @@ export const ACOES_ADMIN = {
   LOJA_SUSPENSA: "Suspendeu loja",
   LOJA_REATIVADA: "Reativou loja",
   COMISSAO_ALTERADA: "Alterou comissão",
+  PLANO_ALTERADO: "Alterou plano de anúncio",
+  /** Ação antiga (antes dos planos Destaque/Premium), mantida para registros antigos */
   DESTAQUE_ALTERADO: "Alterou Oferta destaque",
   PEDIDO_CANCELADO: "Cancelou pedido",
   MATERIAL_CRIADO: "Criou material no catálogo",

@@ -10,7 +10,7 @@ export async function carregarCatalogo() {
   const ofertas = await db.offer.findMany({
     where: { active: true, store: { status: "APROVADA" } },
     include: {
-      store: { select: { id: true, name: true, region: true, featured: true } },
+      store: { select: { id: true, name: true, region: true, adPlan: true } },
       tiers: { orderBy: { minQuantity: "asc" } },
     },
   });

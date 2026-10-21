@@ -46,8 +46,15 @@ test.describe("Painel do administrador", () => {
     await loja(page, "Ceilândia").getByRole("button", { name: "Reativar" }).click();
     await expect(loja(page, "Ceilândia")).toHaveCount(0);
 
+    // Plano de anúncio: Nenhum -> Premium
+    await page.goto("/admin/lojas?status=APROVADA");
+    await loja(page, "Samambaia").getByLabel(/Plano de anúncio de/).selectOption("PREMIUM");
+    await loja(page, "Samambaia").getByRole("button", { name: "Salvar plano" }).click();
+    await expect(loja(page, "Samambaia").getByText("Plano alterado para Premium.")).toBeVisible();
+
     await page.goto("/admin/registro");
-    for (const texto of ["Aprovou loja", "Alterou comissão", "Suspendeu loja", "Reativou loja"]) {
+    await expect(principal(page).locator("ol").getByText(/Samambaia Depósito Popular: de Nenhum para Premium/)).toBeVisible();
+    for (const texto of ["Aprovou loja", "Alterou comissão", "Suspendeu loja", "Reativou loja", "Alterou plano de anúncio"]) {
       await expect(principal(page).locator("ol").getByText(texto).first()).toBeVisible();
     }
     await expect(principal(page).getByText(/de 3% para 5% \(vale para pedidos novos\)/)).toBeVisible();

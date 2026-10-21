@@ -1,6 +1,6 @@
 // Lojas: aprovar/recusar pendentes, suspender/reativar, comissão e Oferta destaque.
 import Link from "next/link";
-import { DESTAQUE, STATUS_LOJA, type StatusLoja } from "@/config/constantes";
+import { PLANOS_ANUNCIO, STATUS_LOJA, type PlanoAnuncio, type StatusLoja } from "@/config/constantes";
 import { formatarCnpj } from "@/domain/documentos";
 import { exigirAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
@@ -58,8 +58,15 @@ export default async function LojasAdmin(props: PageProps<"/admin/lojas">) {
                 {l.region} · CNPJ {formatarCnpj(l.cnpj)}
               </p>
             </div>
-            <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${CORES[l.status] ?? ""}`}>
-              {STATUS_LOJA[l.status as StatusLoja] ?? l.status}
+            <span className="flex shrink-0 flex-col items-end gap-1">
+              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${CORES[l.status] ?? ""}`}>
+                {STATUS_LOJA[l.status as StatusLoja] ?? l.status}
+              </span>
+              {l.adPlan !== "NENHUM" && (
+                <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${l.adPlan === "PREMIUM" ? "bg-violet-800 text-white" : "bg-amber-100 text-amber-800"}`}>
+                  {PLANOS_ANUNCIO[l.adPlan as PlanoAnuncio]}
+                </span>
+              )}
             </span>
           </header>
           <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
@@ -85,8 +92,8 @@ export default async function LojasAdmin(props: PageProps<"/admin/lojas">) {
             </p>
           )}
           <AcoesLojaAdmin
-            loja={{ id: l.id, nome: l.name, status: l.status, comissao: l.commissionPercent, destaque: l.featured }}
-            rotuloDestaque={DESTAQUE.selo}
+            loja={{ id: l.id, nome: l.name, status: l.status, comissao: l.commissionPercent, plano: l.adPlan }}
+            planos={PLANOS_ANUNCIO}
           />
         </article>
       ))}

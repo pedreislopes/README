@@ -7,6 +7,11 @@ test.describe("Painel do lojista", () => {
     await expect(page).toHaveURL("/loja");
   });
 
+  test("mostra o plano de anúncio da loja", async ({ page }) => {
+    await expect(principal(page).getByText("Plano de anúncio")).toBeVisible();
+    await expect(principal(page).getByText("Nenhum", { exact: true })).toBeVisible();
+  });
+
   test("aviso de pedidos novos, comissão visível, avançar e cancelar", async ({ page }) => {
     await expect(page.getByText(/Você tem \d+ pedidos? novos?!/)).toBeVisible();
     await semRolagemLateral(page);

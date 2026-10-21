@@ -7,7 +7,7 @@ import { CATEGORIAS, REGIOES } from "@/config/constantes";
 import { MATERIAIS_POPULARES } from "@/config/sinonimos";
 import { buscarProdutos } from "@/domain/busca";
 import { MAX_ANUNCIOS_NO_TOPO } from "@/config/anuncios";
-import { escolherAnunciosEmRodizio, montarResultados, type Ordem } from "@/domain/resultados";
+import { escolherAnuncios, montarResultados, type Ordem } from "@/domain/resultados";
 import { proximaRodada } from "@/lib/anuncios";
 import { carregarCatalogo } from "@/lib/catalogo";
 import { reaisParaCentavos } from "@/lib/dinheiro";
@@ -49,14 +49,20 @@ export default async function Busca(props: PageProps<"/busca">) {
     precoMax: reaisParaCentavos(valores.max) ?? undefined,
   });
 
-  // Ofertas destaque no topo (até MAX_ANUNCIOS_NO_TOPO; acima disso, rodízio)
-  const anuncios = destaque
-    ? escolherAnunciosEmRodizio(
-        destaque.candidatas,
-        MAX_ANUNCIOS_NO_TOPO,
-        destaque.candidatas.length > MAX_ANUNCIOS_NO_TOPO ? proximaRodada(destaque.produto.id) : 0,
-      )
-    : [];
+  // Anúncios no topo (até MAX_ANUNCIOS_NO_TOPO): Premium primeiro, depois Destaque.
+  // Cada plano só gira (rodízio) quando tem mais lojas do que vagas disponíveis.
+  const anuncios = (() => {
+    if (!destaque) return [];
+    const { premium, destaque: lojasDestaque, produto } = destaque;
+    const vagasDestaque = Math.max(0, MAX_ANUNCIOS_NO_TOPO - premium.length);
+    return escolherAnuncios(
+      premium,
+      lojasDestaque,
+      MAX_ANUNCIOS_NO_TOPO,
+      premium.length > MAX_ANUNCIOS_NO_TOPO ? proximaRodada(`${produto.id}:PREMIUM`) : 0,
+      lojasDestaque.length > vagasDestaque && vagasDestaque > 0 ? proximaRodada(`${produto.id}:DESTAQUE`) : 0,
+    );
+  })();
 
   // Sugestões quando nada foi encontrado: parecidos, ou os mais procurados
   const sugestoes =
@@ -122,13 +128,13 @@ export default async function Busca(props: PageProps<"/busca">) {
           )}
 
           {destaque &&
-            anuncios.map((oferta) => (
+            anuncios.map(({ oferta, plano }) => (
               <CartaoOferta
-                key={`destaque-${oferta.id}`}
+                key={`anuncio-${oferta.id}`}
                 oferta={oferta}
                 unidadeBase={destaque.produto.baseUnit}
                 papel={papel}
-                patrocinado
+                plano={plano}
                 nomeProduto={destaque.produto.name}
               />
             ))}

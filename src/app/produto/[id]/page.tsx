@@ -16,7 +16,7 @@ export default async function Produto(props: PageProps<"/produto/[id]">) {
       offers: {
         where: { active: true, store: { status: "APROVADA" } },
         include: {
-          store: { select: { id: true, name: true, region: true, featured: true } },
+          store: { select: { id: true, name: true, region: true, adPlan: true } },
           tiers: { orderBy: { minQuantity: "asc" } },
         },
       },
@@ -56,7 +56,7 @@ export default async function Produto(props: PageProps<"/produto/[id]">) {
               unidadeBase={produto.baseUnit}
               papel={usuario?.role ?? null}
               melhorPreco={oferta.id === grupo.melhorPrecoId}
-              patrocinado={oferta.store.featured}
+              plano={oferta.store.adPlan === "PREMIUM" || oferta.store.adPlan === "DESTAQUE" ? oferta.store.adPlan : undefined}
             />
           ))}
         </div>

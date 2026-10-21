@@ -2,7 +2,7 @@
 // No celular, o NOME DA LOJA e o PREÇO são o que mais aparece.
 
 import { BadgeCheck, Briefcase, MapPin } from "lucide-react";
-import { UNIDADES_BASE, type Papel, type UnidadeBase } from "@/config/constantes";
+import { UNIDADES_BASE, type Papel, type PlanoPago, type UnidadeBase } from "@/config/constantes";
 import { atacadoSoParaCnpj, faixasDisponiveis, precoPorUnidadeBase } from "@/domain/precos";
 import { formatarPrecoUnidade, formatarReais } from "@/lib/dinheiro";
 import { AdicionarAoCarrinho } from "./AdicionarAoCarrinho";
@@ -25,13 +25,13 @@ type Props = {
   unidadeBase: string;
   papel: Papel | null;
   melhorPreco?: boolean;
-  /** Loja em destaque (anúncio pago): mostra "Oferta destaque" + "Patrocinado" */
-  patrocinado?: boolean;
+  /** Anúncio pago: mostra "Oferta destaque" ou "Oferta premium" + "Patrocinado" */
+  plano?: PlanoPago;
   /** Mostra o nome do produto no cartão (usado na oferta destaque do topo) */
   nomeProduto?: string;
 };
 
-export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, patrocinado, nomeProduto }: Props) {
+export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, nomeProduto }: Props) {
   const unidade = UNIDADES_BASE[unidadeBase as UnidadeBase] ?? unidadeBase;
   const porUnidade = precoPorUnidadeBase(oferta.priceCents, oferta.baseQuantity);
   const faixas = faixasDisponiveis(oferta, papel);
@@ -40,16 +40,18 @@ export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, patrocin
   return (
     <article
       className={`rounded-xl border bg-white p-3 ${
-        patrocinado
-          ? "border-amber-300 bg-amber-50/40"
-          : melhorPreco
+        plano === "PREMIUM"
+          ? "border-violet-300 bg-violet-50/50"
+          : plano === "DESTAQUE"
+            ? "border-amber-300 bg-amber-50/40"
+            : melhorPreco
             ? "border-emerald-400 ring-1 ring-emerald-400"
             : "border-slate-200"
       }`}
     >
-      {(melhorPreco || patrocinado) && (
+      {(melhorPreco || plano) && (
         <div className="mb-2 flex flex-wrap items-start gap-1.5">
-          {patrocinado && <SeloDestaque />}
+          {plano && <SeloDestaque plano={plano} />}
           {melhorPreco && (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
               <BadgeCheck className="h-3.5 w-3.5" /> Melhor preço

@@ -41,38 +41,60 @@ test.describe("Busca e comparação", () => {
     await expect(page.getByText("Nenhuma loja com esses filtros.")).toBeVisible();
   });
 
-  test("Oferta destaque: até 3 no topo, da mais barata para a mais cara, com rodízio igual", async ({ page }) => {
-    // Coloca 5 lojas que vendem cimento CP II em destaque
+  test("anúncios: Premium primeiro, Destaque nas vagas que sobram, com rodízio justo", async ({ page }) => {
+    // 5 lojas que vendem cimento CP II: 2 Premium e 3 Destaque
     const lojas = await db.store.findMany({
       where: { status: "APROVADA", offers: { some: { productId: "cimento-cp2", active: true } } },
-      select: { id: true },
+      select: { id: true, name: true },
+      orderBy: { id: "asc" },
       take: 5,
     });
     expect(lojas).toHaveLength(5);
-    const antes = await db.store.findMany({ where: { featured: true }, select: { id: true } });
-    await db.store.updateMany({ data: { featured: false } });
-    await db.store.updateMany({ where: { id: { in: lojas.map((l) => l.id) } }, data: { featured: true } });
+    const antes = await db.store.findMany({ select: { id: true, adPlan: true } });
+    await db.store.updateMany({ data: { adPlan: "NENHUM" } });
+    await db.store.updateMany({ where: { id: { in: lojas.slice(0, 2).map((l) => l.id) } }, data: { adPlan: "PREMIUM" } });
+    await db.store.updateMany({ where: { id: { in: lojas.slice(2).map((l) => l.id) } }, data: { adPlan: "DESTAQUE" } });
 
+    const precoPorKg = (textos: string[]) => textos.map((t) => Number(t.replace(/[^\d,]/g, "").replace(",", ".")));
     try {
-      const aparicoes = new Map<string, number>();
-      for (let i = 0; i < 5; i++) {
+      const aparicoesDestaque = new Map<string, number>();
+      for (let i = 0; i < 3; i++) {
         await page.goto("/busca?q=cimento+cp2");
-        const anuncios = principal(page).locator("article", { hasText: "Oferta destaque" });
+        const anuncios = principal(page).locator("article", { has: page.getByRole("button", { name: /Patrocinado/ }) });
         await expect(anuncios).toHaveCount(3);
-        const nomes = await anuncios.locator("h3").allInnerTexts();
-        // preço por kg de cada anúncio, na ordem em que aparecem
-        const precos = (await anuncios.locator("text=/\\/kg$/").allInnerTexts()).map((t) =>
-          Number(t.replace(/[^\d,]/g, "").replace(",", ".")),
-        );
+        const premium = anuncios.filter({ hasText: "Oferta premium" });
+        const destaque = anuncios.filter({ hasText: "Oferta destaque" });
+        await expect(premium).toHaveCount(2);
+        await expect(destaque).toHaveCount(1);
+        // As 2 Premium vêm antes, da mais barata para a mais cara
+        await expect(anuncios.nth(0)).toContainText("Oferta premium");
+        await expect(anuncios.nth(1)).toContainText("Oferta premium");
+        const precos = precoPorKg(await premium.locator("text=/\\/kg$/").allInnerTexts());
         expect(precos).toEqual([...precos].sort((a, b) => a - b));
-        for (const n of nomes) aparicoes.set(n, (aparicoes.get(n) ?? 0) + 1);
+        const nome = await destaque.locator("h3").innerText();
+        aparicoesDestaque.set(nome, (aparicoesDestaque.get(nome) ?? 0) + 1);
       }
-      // 5 buscas × 3 vagas = 15 aparições ÷ 5 lojas = 3 para cada uma
-      expect([...aparicoes.values()].sort()).toEqual([3, 3, 3, 3, 3]);
+      // 3 buscas, 1 vaga, 3 lojas Destaque: cada uma aparece 1 vez
+      expect([...aparicoesDestaque.values()]).toEqual([1, 1, 1]);
     } finally {
-      await db.store.updateMany({ data: { featured: false } });
-      await db.store.updateMany({ where: { id: { in: antes.map((l) => l.id) } }, data: { featured: true } });
+      for (const l of antes) await db.store.update({ where: { id: l.id }, data: { adPlan: l.adPlan } });
     }
+  });
+
+  test("emblema Premium é diferente do selo Melhor preço", async ({ page }) => {
+    await page.goto("/busca?q=cimento+cp2");
+    const premium = principal(page).getByText("Oferta premium").first();
+    const melhor = principal(page).getByText("Melhor preço").first();
+    await expect(premium).toBeVisible();
+    await expect(melhor).toBeVisible();
+    const estilo = (el: typeof premium) =>
+      el.evaluate((e) => {
+        const c = getComputedStyle(e);
+        return { fundo: c.backgroundColor, borda: c.borderRadius };
+      });
+    const [p, m] = [await estilo(premium), await estilo(melhor)];
+    expect(p.fundo).not.toBe(m.fundo); // cor diferente
+    expect(p.borda).not.toBe(m.borda); // formato diferente (retangular x arredondado)
   });
 
   test("páginas principais cabem na tela de 360 px", async ({ page }) => {

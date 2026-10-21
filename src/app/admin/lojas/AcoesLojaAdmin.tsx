@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { aprovarLoja, alterarComissao, alternarDestaque, reativarLoja, recusarLoja, suspenderLoja, type Resultado } from "@/lib/acoes-admin";
+import { aprovarLoja, alterarComissao, alterarPlano, reativarLoja, recusarLoja, suspenderLoja, type Resultado } from "@/lib/acoes-admin";
 
-type Loja = { id: string; nome: string; status: string; comissao: number; destaque: boolean };
+type Loja = { id: string; nome: string; status: string; comissao: number; plano: string };
 
-export function AcoesLojaAdmin({ loja, rotuloDestaque }: { loja: Loja; rotuloDestaque: string }) {
+export function AcoesLojaAdmin({ loja, planos }: { loja: Loja; planos: Record<string, string> }) {
   const [enviando, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [pedindoMotivo, setPedindoMotivo] = useState<"recusar" | "suspender" | null>(null);
   const [motivo, setMotivo] = useState("");
   const [comissao, setComissao] = useState(loja.comissao.toLocaleString("pt-BR"));
+  const [plano, setPlano] = useState(loja.plano);
 
   const executar = (acao: () => Promise<Resultado>, sucesso: string) =>
     iniciar(async () => {
@@ -117,17 +118,40 @@ export function AcoesLojaAdmin({ loja, rotuloDestaque }: { loja: Loja; rotuloDes
             Salvar comissão
           </button>
         )}
-        <button
-          type="button"
-          disabled={enviando}
-          aria-pressed={loja.destaque}
-          onClick={() => executar(() => alternarDestaque(loja.id), loja.destaque ? "Saiu da Oferta destaque." : "Entrou na Oferta destaque.")}
-          className={`ml-auto rounded-full px-3 py-2 text-sm font-bold ${loja.destaque ? "bg-amber-100 text-amber-800" : "border border-slate-300 text-slate-600"}`}
-        >
-          {loja.destaque ? `★ ${rotuloDestaque}` : `☆ ${rotuloDestaque}`}
-        </button>
       </div>
       {comissaoMudou && <p className="text-xs text-slate-500">A nova comissão vale só para pedidos feitos depois da mudança.</p>}
+
+      {/* Plano de anúncio no topo da busca */}
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-sm font-semibold">
+          Plano de anúncio
+          <select
+            value={plano}
+            onChange={(e) => {
+              setPlano(e.target.value);
+              setOk(null);
+            }}
+            aria-label={`Plano de anúncio de ${loja.nome}`}
+            className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-base"
+          >
+            {Object.entries(planos).map(([valor, rotulo]) => (
+              <option key={valor} value={valor}>
+                {rotulo}
+              </option>
+            ))}
+          </select>
+        </label>
+        {plano !== loja.plano && (
+          <button
+            type="button"
+            disabled={enviando}
+            onClick={() => executar(() => alterarPlano(loja.id, plano), `Plano alterado para ${planos[plano]}.`)}
+            className={`${botao} bg-slate-900 text-white`}
+          >
+            Salvar plano
+          </button>
+        )}
+      </div>
 
       {erro && <p className="text-sm font-medium text-red-600">{erro}</p>}
       {ok && <p className="text-sm font-medium text-emerald-700">{ok}</p>}

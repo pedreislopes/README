@@ -31,8 +31,8 @@ const db = new PrismaClient();
 // --- Regras de variação de preço -------------------------------------------
 /** Diferença entre a loja mais barata e a mais cara: entre 8% e 20% */
 const DIFERENCA_MIN = 0.08;
-const DIFERENCA_MAX = 0.2;
-/** A loja em destaque fica pelo menos 4% acima da mais barata (para o teste do selo) */
+const DIFERENCA_MAX = 0.195; // um pouco abaixo de 20% para o arredondamento dos centavos não passar do limite
+/** Lojas anunciantes (Destaque/Premium) ficam pelo menos 4% acima da mais barata (para o teste dos selos) */
 const DESTAQUE_ACIMA_DO_MAIS_BARATO = 0.04;
 /** Chance de uma loja vender um material / ter faixas de atacado */
 const CHANCE_VENDER = 0.8;
@@ -79,15 +79,15 @@ const cnpjTeste = (n: number) => {
  * Decide quais lojas vendem o material e o "fator" de preço de cada uma
  * (1,00 = loja mais barata; 1,15 = 15% mais cara).
  */
-function sortearFatores(lojasAprovadas: string[], idDestaque: string) {
-  const vendem = lojasAprovadas.filter((id) => id === idDestaque || sortear() < CHANCE_VENDER);
+function sortearFatores(lojasAprovadas: string[], anunciantes: Set<string>) {
+  const vendem = lojasAprovadas.filter((id) => anunciantes.has(id) || sortear() < CHANCE_VENDER);
   // Garante pelo menos 4 lojas comparando preço
   for (const id of lojasAprovadas) {
     if (vendem.length >= 4) break;
     if (!vendem.includes(id)) vendem.push(id);
   }
 
-  const comuns = vendem.filter((id) => id !== idDestaque);
+  const comuns = vendem.filter((id) => !anunciantes.has(id));
   const brutos = comuns.map(() => sortear());
   const menor = Math.min(...brutos);
   const maior = Math.max(...brutos);
@@ -99,8 +99,8 @@ function sortearFatores(lojasAprovadas: string[], idDestaque: string) {
     const proporcao = maior === menor ? 0 : (brutos[i] - menor) / (maior - menor);
     fatores.set(id, 1 + proporcao * diferenca);
   });
-  if (vendem.includes(idDestaque)) {
-    fatores.set(idDestaque, 1 + entre(DESTAQUE_ACIMA_DO_MAIS_BARATO, diferenca));
+  for (const id of vendem.filter((x) => anunciantes.has(x))) {
+    fatores.set(id, 1 + entre(DESTAQUE_ACIMA_DO_MAIS_BARATO, diferenca));
   }
   return fatores;
 }
@@ -154,7 +154,7 @@ async function main() {
         phone: loja.telefone,
         status: loja.status,
         commissionPercent: loja.comissao,
-        featured: loja.destaque ?? false,
+        adPlan: loja.plano ?? "NENHUM",
         owner: {
           create: {
             name: loja.dono.nome,
@@ -173,7 +173,8 @@ async function main() {
 
   console.log("Criando materiais e ofertas…");
   const aprovadas = LOJAS.filter((l) => l.status === "APROVADA").map((l) => l.id);
-  const idDestaque = LOJAS.find((l) => l.destaque)!.id;
+  // Lojas com plano de anúncio (Destaque ou Premium)
+  const anunciantes = new Set(LOJAS.filter((l) => l.plano).map((l) => l.id));
   const pendentes = LOJAS.filter((l) => l.status === "PENDENTE").map((l) => l.id);
   /** Preço por unidade base de cada loja, para as embalagens alternativas */
   const precoBase = new Map<string, number>();
@@ -223,7 +224,7 @@ async function main() {
       },
     });
 
-    const fatores = sortearFatores(aprovadas, idDestaque);
+    const fatores = sortearFatores(aprovadas, anunciantes);
     // A loja pendente vende parte dos materiais (aparecem após a aprovação)
     for (const id of pendentes) if (sortear() < 0.5) fatores.set(id, entre(1, 1 + DIFERENCA_MAX));
 
@@ -263,7 +264,7 @@ async function main() {
       note: "Muito pedido por construtoras de Taguatinga.",
     },
   });
-  await conferir(idDestaque);
+  await conferir(anunciantes);
 }
 
 /** Cria pedidos de exemplo usando as MESMAS regras de preço e comissão do site */
@@ -277,6 +278,7 @@ async function criarPedidosDeExemplo() {
     for (const p of exemplo.lojas) {
       const loja = await db.store.findUniqueOrThrow({ where: { id: p.loja } });
       const itens = [];
+      const usados: string[] = [];
       let economia = 0;
       for (const [materialId, quantidade] of p.itens) {
         const principal = MATERIAIS.find((m) => m.id === materialId)!.embalagem;
@@ -284,12 +286,21 @@ async function criarPedidosDeExemplo() {
           where: { storeId: loja.id, productId: materialId, packageLabel: principal },
           include: { tiers: true, product: true },
         });
-        if (!oferta) continue; // a loja não vende este material nos dados sorteados
-        const c = calcularItem(oferta, cliente.role as Papel, quantidade, 1);
+        // Se a loja não vende este material nos dados sorteados, usa outro produto dela
+        const escolhida =
+          oferta ??
+          (await db.offer.findFirst({
+            where: { storeId: loja.id, productId: { notIn: usados } },
+            include: { tiers: true, product: true },
+            orderBy: { productId: "asc" },
+          }));
+        if (!escolhida) continue;
+        usados.push(escolhida.productId);
+        const c = calcularItem(escolhida, cliente.role as Papel, quantidade, 1);
         itens.push({
-          offerId: oferta.id,
-          productName: oferta.product.name,
-          packageLabel: oferta.packageLabel,
+          offerId: escolhida.id,
+          productName: escolhida.product.name,
+          packageLabel: escolhida.packageLabel,
           quantity: quantidade,
           listUnitPriceCents: c.listUnitCents,
           unitPriceCents: c.unitCents,
@@ -324,7 +335,7 @@ async function criarPedidosDeExemplo() {
 }
 
 /** Confere as regras pedidas para os dados de teste e mostra um resumo. */
-async function conferir(idDestaque: string) {
+async function conferir(anunciantes: Set<string>) {
   const produtos = await db.product.findMany({
     include: { offers: { include: { store: true, tiers: true } } },
   });
@@ -341,8 +352,8 @@ async function conferir(idDestaque: string) {
     const dif = ofertas.at(-1)!.priceCents / ofertas[0].priceCents - 1;
     menorDif = Math.min(menorDif, dif);
     maiorDif = Math.max(maiorDif, dif);
-    if (ofertas[0].storeId === idDestaque) problemas.push(`${p.name}: loja em destaque é a mais barata`);
-    if (dif < 0.05 || dif > 0.205) problemas.push(`${p.name}: diferença de ${(dif * 100).toFixed(1)}%`);
+    if (anunciantes.has(ofertas[0].storeId)) problemas.push(`${p.name}: loja anunciante é a mais barata`);
+    if (dif < 0.05 || dif > 0.2) problemas.push(`${p.name}: diferença de ${(dif * 100).toFixed(1)}%`);
   }
 
   const totalOfertas = await db.offer.count();
@@ -363,7 +374,7 @@ async function conferir(idDestaque: string) {
   if (problemas.length) {
     throw new Error("Dados de teste fora das regras:\n" + problemas.join("\n"));
   }
-  console.log("✔ Loja em destaque nunca é a mais barata\n");
+  console.log("✔ Lojas Destaque/Premium nunca são as mais baratas\n");
   console.log(`Usuários de teste criados. Senha de todos: ${SENHA_TESTE}`);
 }
 

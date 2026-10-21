@@ -9,6 +9,7 @@
 // - qual oferta aparece no topo como "Patrocinado".
 // =============================================================================
 
+import type { PlanoAnuncio } from "@/config/constantes";
 import { precoPorUnidadeBase, type OfertaPrecificavel } from "./precos";
 
 export type Ordem = "preco" | "unidade";
@@ -16,7 +17,7 @@ export type Ordem = "preco" | "unidade";
 export type OfertaDaBusca = OfertaPrecificavel & {
   id: string;
   productId: string;
-  store: { id: string; region: string; featured: boolean };
+  store: { id: string; region: string; adPlan: PlanoAnuncio | string };
 };
 
 export type Filtros = {
@@ -37,11 +38,12 @@ export type GrupoDeProduto<P, O> = {
 export type Resultados<P, O> = {
   grupos: GrupoDeProduto<P, O>[];
   /**
-   * Lojas em destaque que vendem o produto MAIS relevante da busca (uma oferta
-   * por loja, a de melhor preço por unidade), da mais barata para a mais cara.
-   * Quais aparecem no topo é decidido por escolherAnunciosEmRodizio().
+   * Lojas anunciantes que vendem o produto MAIS relevante da busca (uma oferta
+   * por loja, a de melhor preço por unidade), separadas por plano e ordenadas
+   * da mais barata para a mais cara. Quais aparecem no topo é decidido por
+   * escolherAnuncios().
    */
-  destaque: { produto: P; candidatas: O[] } | null;
+  destaque: { produto: P; premium: O[]; destaque: O[] } | null;
 };
 
 const porUnidade = (o: OfertaPrecificavel) => precoPorUnidadeBase(o.priceCents, o.baseQuantity);
@@ -76,20 +78,24 @@ export function montarResultados<P extends { id: string }, O extends OfertaDaBus
     grupos.push({ produto, ofertas: doProduto, melhorPrecoId: melhor.id });
   }
 
-  // Oferta destaque: lojas em destaque no produto MAIS relevante que elas
+  // Anúncios: lojas Premium/Destaque no produto MAIS relevante que elas
   // realmente vendem (respeitando os filtros). Nunca inventa um produto.
   let destaque: Resultados<P, O>["destaque"] = null;
   for (const grupo of grupos) {
     const melhorPorLoja = new Map<string, O>();
-    for (const o of grupo.ofertas.filter((x) => x.store.featured)) {
+    for (const o of grupo.ofertas.filter((x) => x.store.adPlan === "PREMIUM" || x.store.adPlan === "DESTAQUE")) {
       const atual = melhorPorLoja.get(o.store.id);
       if (!atual || porUnidade(o) < porUnidade(atual)) melhorPorLoja.set(o.store.id, o);
     }
     if (melhorPorLoja.size > 0) {
-      const candidatas = [...melhorPorLoja.values()].sort(
+      const ordenadas = [...melhorPorLoja.values()].sort(
         (a, b) => porUnidade(a) - porUnidade(b) || a.store.id.localeCompare(b.store.id),
       );
-      destaque = { produto: grupo.produto, candidatas };
+      destaque = {
+        produto: grupo.produto,
+        premium: ordenadas.filter((o) => o.store.adPlan === "PREMIUM"),
+        destaque: ordenadas.filter((o) => o.store.adPlan === "DESTAQUE"),
+      };
       break;
     }
   }
@@ -106,9 +112,30 @@ export function montarResultados<P extends { id: string }, O extends OfertaDaBus
  *   "max" vezes. As escolhidas são mostradas da mais barata para a mais cara.
  */
 export function escolherAnunciosEmRodizio<O extends OfertaDaBusca>(candidatas: O[], max: number, rodada: number): O[] {
+  if (max <= 0) return [];
   if (candidatas.length <= max) return candidatas;
   const n = candidatas.length;
   const inicio = ((rodada % n) + n) % n;
   const escolhidas = Array.from({ length: max }, (_, i) => candidatas[(inicio + i) % n]);
   return escolhidas.sort((a, b) => candidatas.indexOf(a) - candidatas.indexOf(b));
+}
+
+/**
+ * Monta as vagas do topo: primeiro as lojas Premium; se sobrarem vagas, entram
+ * as lojas Destaque. Cada plano tem o seu rodízio justo (rodadaPremium e
+ * rodadaDestaque) e é mostrado da mais barata para a mais cara.
+ */
+export function escolherAnuncios<O extends OfertaDaBusca>(
+  premium: O[],
+  destaque: O[],
+  max: number,
+  rodadaPremium: number,
+  rodadaDestaque: number,
+): { oferta: O; plano: "PREMIUM" | "DESTAQUE" }[] {
+  const doPremium = escolherAnunciosEmRodizio(premium, max, rodadaPremium);
+  const doDestaque = escolherAnunciosEmRodizio(destaque, max - doPremium.length, rodadaDestaque);
+  return [
+    ...doPremium.map((oferta) => ({ oferta, plano: "PREMIUM" as const })),
+    ...doDestaque.map((oferta) => ({ oferta, plano: "DESTAQUE" as const })),
+  ];
 }

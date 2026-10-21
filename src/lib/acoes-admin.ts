@@ -7,7 +7,7 @@
 // =============================================================================
 
 import { refresh } from "next/cache";
-import { CATEGORIAS, UNIDADES_BASE } from "@/config/constantes";
+import { CATEGORIAS, PLANOS_ANUNCIO, UNIDADES_BASE, type PlanoAnuncio } from "@/config/constantes";
 import { gerarIdMaterial, validarMotivoAdmin } from "@/domain/catalogo";
 import { validarComissao } from "@/domain/pedidos";
 import { registrarAcao } from "./auditoria";
@@ -91,17 +91,21 @@ export async function alterarComissao(storeId: string, texto: string): Promise<R
   return { ok: true };
 }
 
-export async function alternarDestaque(storeId: string): Promise<Resultado> {
+/** Escolhe o plano de anúncio da loja: Nenhum, Destaque ou Premium (fica registrado na auditoria) */
+export async function alterarPlano(storeId: string, plano: string): Promise<Resultado> {
   const admin = await exigirAdmin();
+  if (!(plano in PLANOS_ANUNCIO)) return { erro: "Plano inválido." };
   const loja = await db.store.findUnique({ where: { id: storeId } });
   if (!loja) return { erro: "Loja não encontrada." };
+  if (loja.adPlan === plano) return { ok: true };
+  const nome = (p: string) => PLANOS_ANUNCIO[p as PlanoAnuncio] ?? p;
   await db.$transaction(async (tx) => {
-    await tx.store.update({ where: { id: storeId }, data: { featured: !loja.featured } });
+    await tx.store.update({ where: { id: storeId }, data: { adPlan: plano } });
     await registrarAcao(
       admin,
-      "DESTAQUE_ALTERADO",
+      "PLANO_ALTERADO",
       { tipo: "Store", id: storeId },
-      `${loja.name}: ${loja.featured ? "saiu da" : "entrou na"} Oferta destaque`,
+      `${loja.name}: de ${nome(loja.adPlan)} para ${nome(plano)}`,
       tx,
     );
   });

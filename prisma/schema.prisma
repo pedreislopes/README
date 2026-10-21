@@ -86,8 +86,9 @@ model Store {
   statusChangedAt   DateTime?
   /// Comissão cobrada pela plataforma, em % (ex.: 8.5 = 8,5%)
   commissionPercent Float     @default(10)
-  /// Loja em destaque: aparece no topo da busca como "Patrocinado"
-  featured          Boolean   @default(false)
+  /// Plano de anúncio no topo da busca: "NENHUM" | "DESTAQUE" | "PREMIUM"
+  /// (Premium tem prioridade sobre Destaque; os dois aparecem como "Patrocinado")
+  adPlan            String    @default("NENHUM")
   createdAt         DateTime  @default(now())
 
   ownerId String @unique

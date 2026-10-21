@@ -1,21 +1,30 @@
 "use client";
 
-// Selo "Oferta destaque" + aviso "Patrocinado" sempre visível.
+// Emblema do anúncio + aviso "Patrocinado" SEMPRE visível (Código de Defesa do Consumidor).
+// - Destaque: etiqueta arredondada âmbar com brilho.
+// - Premium:  etiqueta retangular roxa escura com coroa.
+// Nenhum dos dois lembra o selo "Melhor preço" (verde, com ícone de verificado).
 // O ícone (i) abre/fecha a explicação ao ser tocado.
 
 import { useState } from "react";
-import { Info, Sparkles } from "lucide-react";
-import { DESTAQUE } from "@/config/constantes";
+import { Crown, Info, Sparkles } from "lucide-react";
+import { DESTAQUE, type PlanoPago } from "@/config/constantes";
 
-export function SeloDestaque() {
+export function SeloDestaque({ plano = "DESTAQUE" }: { plano?: PlanoPago }) {
   const [aberto, setAberto] = useState(false);
 
   return (
     <div className="flex flex-col items-start gap-1">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-          <Sparkles className="h-3.5 w-3.5" /> {DESTAQUE.selo}
-        </span>
+        {plano === "PREMIUM" ? (
+          <span className="inline-flex items-center gap-1 rounded-md bg-violet-800 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase">
+            <Crown className="h-3.5 w-3.5 text-amber-300" /> {DESTAQUE.seloPremium}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+            <Sparkles className="h-3.5 w-3.5" /> {DESTAQUE.selo}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => setAberto(!aberto)}
