@@ -11,16 +11,11 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { CUSTO_BCRYPT, LIMITE_LOGIN, VERSAO_TERMOS } from "@/config/seguranca";
 import { normalizarEmail, validarCadastro, type ErrosCadastro } from "@/domain/cadastro";
+import { destinoSeguro } from "@/domain/redirecionamento";
 import { verificarBloqueio } from "@/domain/tentativas";
 import { juntarCarrinhoDoVisitante } from "./carrinho";
 import { db } from "./db";
 import { criarSessao, encerrarSessao, ipDoVisitante } from "./sessao";
-
-/** Só aceita voltar para páginas do próprio site (evita redirecionar para sites falsos) */
-function destinoSeguro(voltar: FormDataEntryValue | null, padrao = "/"): string {
-  const v = typeof voltar === "string" ? voltar : "";
-  return v.startsWith("/") && !v.startsWith("//") ? v : padrao;
-}
 
 // -----------------------------------------------------------------------------
 // Entrar

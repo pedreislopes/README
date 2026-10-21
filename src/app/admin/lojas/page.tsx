@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { DESTAQUE, STATUS_LOJA, type StatusLoja } from "@/config/constantes";
 import { formatarCnpj } from "@/domain/documentos";
+import { exigirAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { AcoesLojaAdmin } from "./AcoesLojaAdmin";
 
@@ -15,6 +16,8 @@ const CORES: Record<string, string> = {
 };
 
 export default async function LojasAdmin(props: PageProps<"/admin/lojas">) {
+  // Verificação própria em cada página: a moldura (layout) sozinha não garante a proteção
+  await exigirAdmin();
   const { status } = await props.searchParams;
   const filtro = Object.keys(STATUS_LOJA).includes(String(status)) ? String(status) : "";
   const lojas = await db.store.findMany({

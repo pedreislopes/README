@@ -1,6 +1,7 @@
 // Registro de auditoria: quem fez o quê e quando. Somente leitura.
 import Link from "next/link";
 import { ACOES_ADMIN, type AcaoAdmin } from "@/lib/auditoria";
+import { exigirAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 
 export const metadata = { title: "Registro de ações" };
@@ -8,6 +9,8 @@ export const metadata = { title: "Registro de ações" };
 const LIMITE = 200;
 
 export default async function Registro(props: PageProps<"/admin/registro">) {
+  // Verificação própria em cada página: a moldura (layout) sozinha não garante a proteção
+  await exigirAdmin();
   const { acao } = await props.searchParams;
   const filtro = typeof acao === "string" && acao in ACOES_ADMIN ? acao : "";
   const registros = await db.adminLog.findMany({

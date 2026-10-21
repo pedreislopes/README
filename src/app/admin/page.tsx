@@ -3,12 +3,15 @@ import Link from "next/link";
 import { ChevronRight, Clock } from "lucide-react";
 import { resumirPedidos } from "@/domain/pedidos";
 import { ACOES_ADMIN, type AcaoAdmin } from "@/lib/auditoria";
+import { exigirAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { formatarReais } from "@/lib/dinheiro";
 
 export const metadata = { title: "Administração" };
 
 export default async function InicioAdmin() {
+  // Verificação própria em cada página: a moldura (layout) sozinha não garante a proteção
+  await exigirAdmin();
   const [pedidos, ativas, pendentes, suspensas, sugestoes, ultimas] = await Promise.all([
     db.order.findMany({ select: { status: true, subtotalCents: true, commissionCents: true } }),
     db.store.count({ where: { status: "APROVADA" } }),

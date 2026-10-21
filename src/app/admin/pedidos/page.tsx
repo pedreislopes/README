@@ -5,6 +5,7 @@ import { CancelarPedido } from "@/components/CancelarPedido";
 import { estiloCampo } from "@/components/Formulario";
 import { MOTIVOS_CANCELAMENTO, STATUS_PEDIDO, type StatusPedido } from "@/config/constantes";
 import { comissaoEfetiva, podeCancelar, resumirPedidos } from "@/domain/pedidos";
+import { exigirAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { formatarReais } from "@/lib/dinheiro";
 import { numeroDoPedido } from "@/lib/pedidos";
@@ -16,6 +17,8 @@ export const metadata = { title: "Pedidos e comissões" };
 const dataBrasilia = (d: Date) => d.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
 
 export default async function PedidosAdmin(props: PageProps<"/admin/pedidos">) {
+  // Verificação própria em cada página: a moldura (layout) sozinha não garante a proteção
+  await exigirAdmin();
   const filtros = lerFiltros(await props.searchParams);
   const [pedidos, lojas] = await Promise.all([
     buscarPedidosDoRelatorio(filtros),

@@ -11,8 +11,11 @@ Marketplace de materiais de construção para Brasília/DF: compare preços entr
 npm install            # baixa as dependências
 npm run banco:resetar  # cria o banco de dados com os dados de teste
 npm run dev            # liga o site em http://localhost:3000
-npm test               # roda os testes automáticos
+npm test               # testes das regras (preços, calculadora, comissão…)
+npm run test:e2e       # testes de ponta a ponta num navegador de celular (360 px)
 ```
+
+> Os testes de ponta a ponta **apagam e recriam os dados de teste** do banco local.
 
 ## Usuários de teste
 
@@ -121,6 +124,14 @@ Ficam em `prisma/dados-teste.ts` (listas fáceis de editar) e são gravados por 
 - **Materiais**: aprovar/recusar sugestões dos lojistas e incluir materiais novos no catálogo.
 - **Registro (auditoria)**: toda ação do administrador fica registrada — quem fez, o quê e quando —
   inclusive o download de planilhas. O site não tem opção de apagar o registro.
+
+## Testes automáticos
+
+- **98 testes de regras** (`src/domain/*.test.ts`): busca, preço por unidade, faixas de atacado, carrinho,
+  calculadora, comissão, cancelamento, relatório/CSV, validação de CPF/CNPJ, limite de login.
+- **27 testes de ponta a ponta** (`e2e/`), num celular de 360 px: busca, cadastro e login, carrinho e
+  pedido, calculadora, painel do lojista, painel do administrador e **segurança** (cada tipo de usuário
+  tentando abrir pelo endereço o que não é seu). Também conferem que nenhuma tela "vaza" para os lados.
 
 ## Onde fica cada coisa
 

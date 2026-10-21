@@ -43,3 +43,7 @@ next-env.d.ts
 # banco de dados local (é recriado com "npm run banco:resetar")
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# relatórios dos testes de ponta a ponta
+/test-results/
+/playwright-report/

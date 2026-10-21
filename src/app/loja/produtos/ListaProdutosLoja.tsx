@@ -130,7 +130,7 @@ export function ListaProdutosLoja({ produtos }: { produtos: Produto[] }) {
 
       <ul className="space-y-2">
         {visiveis.map((p) => (
-          <ItemProduto key={`${p.id}-${p.priceCents}-${p.ativo}`} produto={p} selecionado={selecionados.has(p.id)} onSelecionar={() => alternar(p.id)} />
+          <ItemProduto key={p.id} produto={p} selecionado={selecionados.has(p.id)} onSelecionar={() => alternar(p.id)} />
         ))}
       </ul>
     </div>
@@ -139,6 +139,12 @@ export function ListaProdutosLoja({ produtos }: { produtos: Produto[] }) {
 
 function ItemProduto({ produto: p, selecionado, onSelecionar }: { produto: Produto; selecionado: boolean; onSelecionar: () => void }) {
   const [preco, setPreco] = useState(paraTexto(p.priceCents));
+  // Se o preço mudar no servidor (ex.: reajuste em massa), atualiza o campo
+  const [precoDoServidor, setPrecoDoServidor] = useState(p.priceCents);
+  if (precoDoServidor !== p.priceCents) {
+    setPrecoDoServidor(p.priceCents);
+    setPreco(paraTexto(p.priceCents));
+  }
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
   const [enviando, iniciar] = useTransition();

@@ -1,11 +1,14 @@
 // Catálogo de materiais: sugestões dos lojistas e cadastro de materiais novos.
 import { CATEGORIAS, UNIDADES_BASE, type UnidadeBase } from "@/config/constantes";
+import { exigirAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { FormularioMaterial, RevisarSugestao } from "./Formularios";
 
 export const metadata = { title: "Materiais" };
 
 export default async function MateriaisAdmin() {
+  // Verificação própria em cada página: a moldura (layout) sozinha não garante a proteção
+  await exigirAdmin();
   const [sugestoes, analisadas, produtos] = await Promise.all([
     db.materialSuggestion.findMany({ where: { status: "PENDENTE" }, include: { store: { select: { name: true } } }, orderBy: { createdAt: "asc" } }),
     db.materialSuggestion.findMany({
