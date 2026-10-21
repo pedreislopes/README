@@ -112,10 +112,10 @@ Espere aparecer `Ready` e abra no navegador: **http://localhost:3000**
 
 #### Ver no celular (opcional)
 
-Com o computador e o celular **no mesmo Wi-Fi**, rode `npm run dev -- -H 0.0.0.0` e, no celular, abra
-`http://IP-DO-COMPUTADOR:3000` (o terminal mostra o endereço em "Network"). Alguns antivírus/firewalls
-bloqueiam isso; se não abrir, use o navegador do computador no modo celular (tecla `F12` → ícone de
-celular).
+Com o computador e o celular **no mesmo Wi-Fi**, abra no celular o endereço que o terminal mostra na
+linha **Network** (algo como `http://192.168.0.10:3000`). Se não abrir, o firewall/antivírus do
+computador pode estar bloqueando; nesse caso, use o navegador do computador no modo celular
+(tecla `F12` → ícone de celular).
 
 ---
 
