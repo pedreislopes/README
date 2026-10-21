@@ -71,7 +71,8 @@ test.describe("Segurança: ninguém acessa o que não é seu", () => {
     // Na primeira aba, toca em "Lojas" (troca de página sem recarregar)
     await page.getByRole("navigation", { name: "Painel do administrador" }).getByRole("link", { name: /Lojas/ }).click();
     await expect(page).toHaveURL(/\/entrar/);
-    await expect(page.getByText(/@teste\.com/)).toHaveCount(0);
+    // Nenhum dado do painel de lojas aparece (ex.: o campo "Responsável" de cada loja)
+    await expect(page.getByText("Responsável")).toHaveCount(0);
   });
 
   test("cabeçalhos de segurança em todas as páginas", async ({ page }) => {

@@ -4,8 +4,11 @@
 areia, tijolo e outros materiais em várias lojas da sua região e compra tudo em um só lugar.
 
 Esta é a primeira versão (MVP): funciona no seu computador, com lojas, produtos e usuários **fictícios**.
-Não há pagamento real nem entrega. Para colocar na internet, veja o arquivo
-[PROXIMOS-PASSOS.md](PROXIMOS-PASSOS.md).
+Não há pagamento real nem entrega.
+
+- **Quer testar pelo navegador (até pelo iPad), sem computador?** Siga o
+  [PUBLICAR-TESTE.md](PUBLICAR-TESTE.md): publica um ambiente de **teste** na Vercel, com banco Neon.
+- Para o lançamento real, veja o [PROXIMOS-PASSOS.md](PROXIMOS-PASSOS.md).
 
 ---
 
@@ -96,7 +99,7 @@ No final deve aparecer uma lista com ✔, como `✔ 9 lojas, 44 materiais…` e
 npm test
 ```
 
-Deve terminar com algo como `Tests  102 passed`.
+Deve terminar com algo como `Tests  107 passed`.
 
 ### 1.7 Ligue o site
 
@@ -244,7 +247,7 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 
 | Comando | O que testa |
 |---|---|
-| `npm test` | **102 testes das regras**: busca, preço por unidade, faixas de atacado, carrinho, calculadora, comissão, cancelamento, relatório/CSV, anúncios Premium/Destaque e rodízio, CPF/CNPJ, limite de login. |
+| `npm test` | **107 testes das regras**: busca, preço por unidade, faixas de atacado, carrinho, calculadora, comissão, cancelamento, relatório/CSV, anúncios Premium/Destaque e rodízio, CPF/CNPJ, limite de login, configuração do banco PostgreSQL da Vercel. |
 | `npm run test:e2e` | **29 testes de ponta a ponta**: um navegador de verdade, do tamanho de um **celular de 360 px**, clica pelo site inteiro (busca, cadastro, carrinho, pedido, calculadora, lojista, administrador e segurança). |
 
 Para os testes de ponta a ponta, na primeira vez rode também `npx playwright install chromium`
@@ -265,6 +268,7 @@ Para os testes de ponta a ponta, na primeira vez rode também `npx playwright in
 ```
 npm install            # instala as dependências
 npm run banco:resetar  # cria/atualiza o banco e recria os dados de teste
+npm run banco:gerar-postgres  # após mudar prisma/schema.prisma: regera a cópia PostgreSQL (Vercel)
 npm run dev            # site em modo de desenvolvimento: http://localhost:3000
 npm run build          # gera a versão de produção
 npm start              # roda a versão de produção (depois do build)

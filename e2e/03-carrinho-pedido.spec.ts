@@ -52,7 +52,7 @@ test.describe("Carrinho e pedido", () => {
     // 5. Confirma o pedido
     await page.getByRole("button", { name: "Confirmar pedido" }).click();
     await page.waitForURL(/\/pedido\//);
-    await expect(page.getByText("Pedido registrado!")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pedido registrado!" })).toBeVisible();
     await semRolagemLateral(page);
     const pedidoAntes = await principal(page).innerText();
 

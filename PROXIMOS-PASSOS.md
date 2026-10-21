@@ -32,38 +32,36 @@ e **não guardam arquivos** entre uma execução e outra. Por isso, para publica
 | Onde ficam os dados | Arquivo SQLite | **PostgreSQL** num serviço especializado (ex.: Neon ou Supabase) |
 | Endereço | `localhost:3000` | Seu domínio, ex.: `solid.com.br` (com cadeado HTTPS automático) |
 
-### 1.2 Passo a passo (feito por um programador, cerca de 1 dia de trabalho)
+### 1.2 O que já está pronto: o ambiente de TESTE
 
-1. **Criar o banco PostgreSQL** num serviço como **Neon** (neon.tech) ou **Supabase** (supabase.com).
-   Eles entregam um "endereço de conexão" (começa com `postgresql://…`). Guarde-o em segredo: ele dá
-   acesso total aos dados.
-2. **Trocar o SQLite pelo PostgreSQL no projeto**, em `prisma/schema.prisma`:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")   // o endereço fica fora do código, como "segredo"
-   }
-   ```
-3. **Recriar as migrações** (o "histórico" de mudanças do banco): as atuais foram escritas para SQLite.
-   O programador apaga a pasta `prisma/migrations`, aponta `DATABASE_URL` para um banco PostgreSQL de
-   teste e roda `npx prisma migrate dev --name inicial`. Nada do código das telas precisa mudar.
-4. **Criar uma conta na Vercel** (vercel.com) usando o seu login do GitHub e clicar em
-   **Add New → Project → Import** no repositório do Solid.
-5. **Configurar na Vercel** (em *Settings → Environment Variables*): `DATABASE_URL` com o endereço do
-   passo 1. Em *Build Command*, usar: `prisma migrate deploy && next build`.
-6. **Criar o primeiro administrador.** Hoje o administrador só existe nos dados de teste. Na internet
-   **não** se usam os dados de teste (`npm run banco:resetar` apaga tudo!). O programador cria um pequeno
-   comando para cadastrar o administrador real com uma senha forte.
-7. **Domínio**: registrar o nome no **registro.br** (ex.: `solid.com.br`) e apontá-lo para a Vercel
+O projeto **já sabe** rodar na Vercel com PostgreSQL (Neon). O guia para o iPad está em
+[PUBLICAR-TESTE.md](PUBLICAR-TESTE.md). Resumo do que foi feito no código:
+
+- `prisma/postgres/` tem a versão PostgreSQL do banco e suas migrações (gerada a partir de
+  `prisma/schema.prisma`; no computador continua o SQLite).
+- `vercel.json` + `scripts/build-vercel.mjs`: cria as tabelas, grava os dados de teste (só se
+  `SOLID_AMBIENTE=teste` e o banco estiver vazio) e monta o site.
+- O endereço do banco **nunca** está no código: a Vercel o cria sozinha ao conectar o Neon.
+- Faixa "Versão de teste — dados fictícios" e senha de acesso ao site (`SENHA_ACESSO_TESTE`).
+
+### 1.3 O que falta para a PRODUÇÃO (feito por um programador, cerca de 1 dia)
+
+1. **Outro projeto na Vercel e outro banco no Neon**, separados do teste (nunca reaproveitar o banco de
+   teste). **Não** criar `SOLID_AMBIENTE` nem `SENHA_ACESSO_TESTE` nele: assim não há faixa de teste,
+   nem senha de acesso, e os dados fictícios **não** são gravados (o comando se recusa).
+2. **Criar o primeiro administrador.** Hoje o administrador só existe nos dados de teste. O programador
+   cria um pequeno comando para cadastrar o administrador real com uma senha forte.
+3. **Plano Vercel Pro** (uso comercial) e plano pago do Neon com cópias de segurança (*backups*).
+4. **Domínio**: registrar o nome no **registro.br** (ex.: `solid.com.br`) e apontá-lo para a Vercel
    (a Vercel mostra o que configurar). O cadeado HTTPS é automático e gratuito.
-8. **Conferir depois de publicar**: entrar como cliente, lojista e administrador; rodar os testes de
-   ponta a ponta apontando para um ambiente de teste (nunca para o banco de produção).
+5. **Conferir depois de publicar**: entrar como cliente, lojista e administrador; rodar os testes de
+   ponta a ponta apontando para o ambiente de teste (nunca para o banco de produção).
 
 > O que **já está pronto** para a internet: o cookie de login passa a exigir HTTPS sozinho; o limite de
 > tentativas de login usa o endereço do visitante informado pela Vercel; os cabeçalhos de segurança
 > já são enviados em todas as páginas.
 
-### 1.3 Ter dois ambientes
+### 1.4 Ter dois ambientes
 
 Recomendado: um site de **teste** (ex.: `teste.solid.com.br`, com banco próprio e dados fictícios) e o de
 **produção** (clientes reais). Toda mudança passa primeiro pelo de teste. A Vercel faz isso quase
@@ -190,7 +188,7 @@ com comissões e planos de anúncio.
 
 ## 4. Ordem sugerida
 
-1. Publicar o **ambiente de teste** (seção 1) e mostrar a lojistas parceiros e possíveis clientes.
+1. Publicar o **ambiente de teste** ([PUBLICAR-TESTE.md](PUBLICAR-TESTE.md)) e mostrar a lojistas parceiros e possíveis clientes.
 2. Em paralelo: **engenheiro** (coeficientes) e **advogado** (Termos, Privacidade, contrato com lojistas).
 3. Desenvolver: **"esqueci minha senha"**, **e-mails automáticos**, **frete por região**,
    **contagem do rodízio no banco**, **auditoria externa** e **backup**.

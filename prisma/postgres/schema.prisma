@@ -1,0 +1,298 @@
+// ARQUIVO GERADO AUTOMATICAMENTE por scripts/gerar-schema-postgres.mjs — NÃO EDITE.
+// Edite prisma/schema.prisma e rode: npm run banco:gerar-postgres
+
+// =============================================================================
+// SOLID — Estrutura do banco de dados
+// =============================================================================
+// Cada "model" abaixo vira uma tabela no banco.
+//
+// Convenções importantes:
+// - Todo valor em dinheiro é guardado em CENTAVOS, como número inteiro
+//   (ex.: R$ 40,90 = 4090). Isso evita erros de arredondamento.
+// - Campos de "tipo" ou "status" são textos; os valores aceitos estão
+//   listados nos comentários e em src/config/constantes.ts.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Endereços do banco: ficam SÓ nas variáveis de ambiente da Vercel, nunca no código.
+  url       = env("DATABASE_URL") // conexão com "pool" (usada pelo site)
+  directUrl = env("DATABASE_URL_UNPOOLED") // conexão direta (usada para criar as tabelas)
+}
+
+// -----------------------------------------------------------------------------
+// Pessoas que usam o sistema
+// -----------------------------------------------------------------------------
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  passwordHash    String
+  /// "CPF" | "CNPJ" | "LOJISTA" | "ADMIN"
+  role            String
+  /// CPF ou CNPJ, só os números. Único: não pode haver duas contas com o mesmo documento.
+  document        String    @unique
+  phone           String?
+  /// Quando aceitou os Termos de Uso e a Política de Privacidade (registro exigido pela LGPD)
+  termsAcceptedAt DateTime?
+  /// Qual versão dos termos foi aceita
+  termsVersion    String?
+  createdAt       DateTime  @default(now())
+
+  store     Store?
+  sessions  Session[]
+  purchases Purchase[]
+  cart      Cart?
+}
+
+/// Sessão de login (o "crachá" guardado no navegador).
+/// O navegador guarda um código secreto; aqui guardamos só uma "impressão digital"
+/// (hash SHA-256) dele. Assim, quem copiar o banco não consegue usar as sessões.
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Tentativa de login que FALHOU. Usada para bloquear ataques de força bruta
+/// (muitas senhas testadas seguidas). Apagada quando a pessoa acerta a senha.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  /// "email:fulano@x.com" ou "ip:200.1.2.3"
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Lojas e produtos
+// -----------------------------------------------------------------------------
+model Store {
+  id                String    @id @default(cuid())
+  name              String
+  /// CNPJ da loja, só os números
+  cnpj              String
+  /// Uma das regiões administrativas de src/config/constantes.ts
+  region            String
+  address           String
+  phone             String
+  /// "PENDENTE" | "APROVADA" (ativa) | "RECUSADA" | "SUSPENSA" — só APROVADAS aparecem na busca
+  status            String    @default("PENDENTE")
+  /// Motivo da última mudança de situação (recusa ou suspensão)
+  statusReason      String?
+  statusChangedAt   DateTime?
+  /// Comissão cobrada pela plataforma, em % (ex.: 8.5 = 8,5%)
+  commissionPercent Float     @default(10)
+  /// Plano de anúncio no topo da busca: "NENHUM" | "DESTAQUE" | "PREMIUM"
+  /// (Premium tem prioridade sobre Destaque; os dois aparecem como "Patrocinado")
+  adPlan            String    @default("NENHUM")
+  createdAt         DateTime  @default(now())
+
+  ownerId String @unique
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  offers      Offer[]
+  orders      Order[]
+  suggestions MaterialSuggestion[]
+}
+
+/// Material do catálogo geral (ex.: "Cimento CP II").
+/// Várias lojas vendem o mesmo material; cada venda é uma "Offer".
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  /// Uma das categorias de src/config/constantes.ts
+  category    String
+  description String?
+  /// Unidade padronizada para comparar preços: "kg" | "m3" | "m2" | "un" | "m" | "l"
+  baseUnit    String
+  /// Palavras extras para a busca (ex.: "cp2 cp-ii portland")
+  keywords    String  @default("")
+
+  offers Offer[]
+}
+
+/// Um produto à venda em uma loja específica, com preço e embalagem.
+model Offer {
+  id           String  @id @default(cuid())
+  storeId      String
+  productId    String
+  brand        String?
+  /// Como aparece para o cliente (ex.: "Saco 50 kg", "Milheiro")
+  packageLabel String
+  /// Quanto da unidade padronizada vem em 1 embalagem
+  /// (ex.: saco de 50 kg = 50; milheiro = 1000; barra de 6 m = 6)
+  baseQuantity Float
+  /// Preço normal de 1 embalagem, em centavos
+  priceCents   Int
+  /// As faixas de atacado valem também para CPF? (padrão: só CNPJ)
+  tiersForCpf  Boolean @default(false)
+  /// Menor fração vendida: 1 = só inteiros (sacos, peças); 0.5 = de meio em meio (ex.: 0,5 m³ de areia)
+  quantityStep Float   @default(1)
+  active       Boolean @default(true)
+
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product    Product     @relation(fields: [productId], references: [id])
+  tiers      PriceTier[]
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+}
+
+/// Faixa de preço por quantidade (atacado).
+/// Ex.: a partir de 50 sacos, R$ 36,00 cada.
+model PriceTier {
+  id          String @id @default(cuid())
+  offerId     String
+  /// Quantidade mínima para valer esta faixa
+  minQuantity Int
+  /// Preço de 1 embalagem nesta faixa, em centavos
+  priceCents  Int
+
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------------------------
+// Carrinho
+// -----------------------------------------------------------------------------
+
+/// Carrinho guardado no servidor (não some ao fechar o navegador).
+/// Visitante: identificado por um cookie. Ao entrar na conta, os itens
+/// do visitante são somados ao carrinho do usuário.
+model Cart {
+  id        String     @id
+  userId    String?    @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id            String   @id @default(cuid())
+  cartId        String
+  offerId       String
+  quantity      Float
+  /// "Foto" do preço e das faixas quando o item foi adicionado.
+  /// Se a loja mudar o preço depois, avisamos o cliente antes de finalizar.
+  priceSnapshot String
+  addedAt       DateTime @default(now())
+
+  cart  Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, offerId])
+}
+
+// -----------------------------------------------------------------------------
+// Compras e pedidos
+// -----------------------------------------------------------------------------
+
+/// Uma compra feita pelo cliente. Se tiver itens de 3 lojas,
+/// ela é dividida em 3 pedidos (Order), um para cada loja.
+model Purchase {
+  id           String   @id @default(cuid())
+  userId       String
+  totalCents   Int
+  /// Quanto o cliente economizou com faixas de atacado
+  savingsCents Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id])
+  orders Order[]
+}
+
+/// Pedido recebido por UMA loja.
+model Order {
+  id                String    @id @default(cuid())
+  purchaseId        String
+  storeId           String
+  /// "NOVO" | "RECEBIDO" | "SEPARADO" | "ENTREGUE" | "CANCELADO"
+  status            String    @default("NOVO")
+  /// Cancelamento: quem cancelou ("CLIENTE" | "LOJA" | "ADMIN"), quando e por quê.
+  /// Pedido cancelado não gera comissão.
+  canceledBy        String?
+  canceledAt        DateTime?
+  cancelReason      String?
+  subtotalCents     Int
+  savingsCents      Int       @default(0)
+  /// Cópia da % de comissão no momento do pedido
+  commissionPercent Float
+  commissionCents   Int
+  /// Frete em centavos. NULO = "a combinar com a loja" (cálculo de frete virá depois)
+  freightCents      Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  purchase Purchase    @relation(fields: [purchaseId], references: [id])
+  store    Store       @relation(fields: [storeId], references: [id])
+  items    OrderItem[]
+}
+
+/// Item de um pedido. Guarda cópia do nome e dos preços,
+/// para o histórico não mudar se a loja alterar o produto depois.
+model OrderItem {
+  id                 String  @id @default(cuid())
+  orderId            String
+  offerId            String?
+  productName        String
+  packageLabel       String
+  /// Pode ter fração (ex.: 2,5 m³ de areia)
+  quantity           Float
+  /// Preço normal de 1 embalagem (sem faixa)
+  listUnitPriceCents Int
+  /// Preço efetivamente cobrado por embalagem (com faixa, se houver)
+  unitPriceCents     Int
+  totalCents         Int
+
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  offer Offer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+}
+
+// -----------------------------------------------------------------------------
+// Catálogo: sugestões de materiais novos (lojista sugere, administrador decide)
+// -----------------------------------------------------------------------------
+model MaterialSuggestion {
+  id         String    @id @default(cuid())
+  storeId    String
+  name       String
+  category   String
+  /// Unidade de comparação sugerida: "kg" | "m3" | "m2" | "un" | "m" | "l"
+  baseUnit   String
+  note       String?
+  /// "PENDENTE" | "APROVADA" | "RECUSADA"
+  status     String    @default("PENDENTE")
+  /// Resposta do administrador (motivo da recusa, por exemplo)
+  reviewNote String?
+  reviewedAt DateTime?
+  /// Material criado no catálogo quando a sugestão é aprovada
+  productId  String?
+  createdAt  DateTime  @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------------------------
+// Auditoria: registro de TODAS as ações do administrador (não pode ser apagado pelo site)
+// -----------------------------------------------------------------------------
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  /// Cópia do nome, para o registro continuar legível mesmo se a conta mudar
+  adminName  String
+  /// Código da ação, ex.: "LOJA_APROVADA", "COMISSAO_ALTERADA"
+  action     String
+  /// O que foi afetado, ex.: "Store" + id da loja
+  targetType String
+  targetId   String
+  /// Descrição legível, ex.: "Comissão de 3% para 4%"
+  details    String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}

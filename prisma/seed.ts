@@ -26,6 +26,14 @@ import {
   type MaterialTeste,
 } from "./dados-teste";
 
+// TRAVA DE SEGURANÇA: este programa APAGA todos os dados antes de gravar os de teste.
+// Num banco da internet (PostgreSQL), só roda se o ambiente estiver marcado como teste.
+const url = process.env.DATABASE_URL ?? "";
+if (url.startsWith("postgres") && process.env.SOLID_AMBIENTE !== "teste") {
+  console.error("✖ Recusado: banco PostgreSQL sem SOLID_AMBIENTE=teste. Os dados de teste apagam tudo.");
+  process.exit(1);
+}
+
 const db = new PrismaClient();
 
 // --- Regras de variação de preço -------------------------------------------
