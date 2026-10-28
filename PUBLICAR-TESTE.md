@@ -1,7 +1,8 @@
-# Solid — Publicar o ambiente de TESTE (só com o iPad)
+# Solid — Publicar o ambiente de TESTE (pelo navegador: computador ou iPad)
 
 Este guia coloca o Solid na internet **para testes**, com os mesmos dados fictícios de sempre.
-Tudo é feito pelo **Safari do iPad**, sem instalar nada e sem copiar nenhuma senha de banco de dados.
+Tudo é feito **pelo navegador** (Chrome, Edge, Safari ou Firefox), no computador ou no iPad, sem instalar
+nada e sem copiar nenhuma senha de banco de dados. No computador, "tocar" = **clicar**.
 
 - **Vercel** (vercel.com): é quem "liga" o site na internet. Plano gratuito (*Hobby*).
 - **Neon** (neon.tech): é o banco de dados PostgreSQL, onde ficam lojas, produtos e pedidos. Plano gratuito.
@@ -25,7 +26,7 @@ Tempo estimado: **20 a 30 minutos**.
 5. [Primeira publicação (vai dar erro — é de propósito)](#5-primeira-publicação-vai-dar-erro--é-de-propósito)
 6. [Criar o banco no Neon e ligar ao projeto](#6-criar-o-banco-no-neon-e-ligar-ao-projeto)
 7. [Publicar de novo (Redeploy)](#7-publicar-de-novo-redeploy)
-8. [Abrir o site no iPad](#8-abrir-o-site-no-ipad)
+8. [Abrir o site](#8-abrir-o-site)
 9. [Tarefas do dia a dia](#9-tarefas-do-dia-a-dia)
 10. [Problemas comuns](#10-problemas-comuns)
 11. [Segurança: o que fica onde](#11-segurança-o-que-fica-onde)
@@ -36,22 +37,24 @@ Tempo estimado: **20 a 30 minutos**.
 
 Você vai precisar de:
 
-- O iPad com Safari e internet.
+- Um computador (ou iPad) com navegador e internet.
 - Seu login do **GitHub** (o mesmo onde está o repositório `README` do Solid).
 - Uma **senha de acesso ao site de teste**, inventada por você agora. Ela impede que estranhos abram o
   site. Dicas:
   - Pelo menos **12 caracteres**, misturando letras e números (ex.: três palavras + um número).
   - **Não** use `solid123` nem nenhuma senha que você já usa em outro lugar.
-  - Guarde-a no app **Notas** (com cadeado) ou no app **Senhas** do iPad.
+  - Guarde-a num lugar seguro: o gerenciador de senhas do navegador, o app **Senhas**/**Notas** com
+    cadeado, ou um papel guardado. **Não** salve num arquivo de texto solto na área de trabalho.
 
-> 💡 Dica de iPad: abra este guia numa aba e a Vercel em outra. Ou use a **Split View**
+> 💡 Dica: no computador, deixe este guia numa janela e a Vercel em outra, lado a lado. No iPad, use a
+> **Split View**
 > (os três pontinhos no topo do app) para ver os dois lado a lado.
 
 ---
 
 ## 2. Criar a conta na Vercel
 
-1. No Safari, abra **vercel.com** e toque em **Sign Up** (Cadastrar).
+1. No navegador, abra **vercel.com** e toque em **Sign Up** (Cadastrar).
 2. Escolha o plano **Hobby** (gratuito, para projetos pessoais e testes) e digite seu nome.
 3. Toque em **Continue with GitHub**.
 4. O GitHub pede para você entrar (se ainda não estiver) e depois mostra **Authorize Vercel**.
@@ -111,7 +114,7 @@ Toque em **Continue to Dashboard** (ou no nome do projeto, no topo) e siga para 
 ## 6. Criar o banco no Neon e ligar ao projeto
 
 1. Dentro do projeto na Vercel, toque na aba **Storage**.
-   (No iPad, as abas ficam numa barra no topo; se não couber, deslize a barra para o lado
+   (As abas ficam numa barra no topo do projeto. No iPad, se não couber, deslize a barra para o lado
    ou toque no menu ☰.)
 2. Toque em **Create Database** (ou **Connect Database** → **Create New**).
 3. Na lista de provedores, escolha **Neon** (*Serverless Postgres*) e toque em **Continue**.
@@ -150,14 +153,14 @@ usuários de teste (só porque `SOLID_AMBIENTE` é `teste` **e** o banco estava 
 
 ---
 
-## 8. Abrir o site no iPad
+## 8. Abrir o site
 
 1. Toque em **Visit** (ou no endereço que termina em **`.vercel.app`**, por exemplo
    `solid-teste.vercel.app`).
-2. O Safari abre uma janelinha **"Entrar"** pedindo usuário e senha:
+2. O navegador abre uma janelinha (**"Fazer login"** / **"Entrar"**) pedindo usuário e senha:
    - **Usuário**: `solid`
    - **Senha**: a senha de acesso que você criou no passo 1.
-   - Se o Safari oferecer, toque em **Salvar senha** — assim ele não pergunta toda vez.
+   - Se o navegador oferecer, escolha **Salvar senha** — assim ele não pergunta toda vez.
 3. No topo do site deve aparecer a faixa escura:
    **🧪 Versão de teste — dados fictícios. Nenhuma compra é real.**
 4. Na tela **Entrar** do Solid aparece a caixa **"Contas de teste"** com os e-mails para testar.
@@ -172,7 +175,7 @@ usuários de teste (só porque `SOLID_AMBIENTE` é `teste` **e** o banco estava 
 
 5. Siga o roteiro da seção 3 do [README.md](README.md#3-roteiro-para-testar-o-site) para testar.
 
-> 💡 **Atalho na tela de início:** no Safari, toque em **Compartilhar** (quadrado com seta) →
+> 💡 **Atalho:** no computador, adicione aos **Favoritos** (Ctrl+D; no Mac, ⌘+D). No iPad, no Safari, toque em **Compartilhar** (quadrado com seta) →
 > **Adicionar à Tela de Início**. O Solid vira um ícone, como um app.
 
 > 🐢 **O primeiro acesso do dia pode demorar uns 5 a 10 segundos.** O banco gratuito do Neon "dorme"
@@ -230,7 +233,7 @@ Os dados **não** são apagados nessas publicações (só com `RESETAR_DADOS_TES
 | Erro "**Falta conectar o banco de dados**" | Normal na 1ª vez. Faça o passo 6 e depois o 7 (*Redeploy*). Se já fez o 6, confira em **Storage** se o banco aparece ligado ao projeto, em todos os ambientes. |
 | O repositório **README** não aparece para importar | Passo 3, item "Não aparece na lista?" (*Adjust GitHub App Permissions*). |
 | O site não pede senha | A variável `SENHA_ACESSO_TESTE` não foi salva ou o *Redeploy* não foi feito depois de criá-la. Confira em **Settings → Environment Variables** e faça *Redeploy*. |
-| O Safari pede a senha sem parar | Usuário errado (é `solid`) ou senha diferente da salva na Vercel. Cuidado com a primeira letra maiúscula automática do teclado. |
+| O navegador pede a senha sem parar | Usuário errado (é `solid`) ou senha diferente da salva na Vercel. Cuidado com a primeira letra maiúscula automática do teclado. |
 | Não aparece a faixa "Versão de teste" | `SOLID_AMBIENTE` está faltando ou não está exatamente `teste` (minúsculo). Corrija e faça *Redeploy*. |
 | Site abre, mas **sem lojas nem produtos** | Os dados não foram gravados porque faltava `SOLID_AMBIENTE=teste` quando o banco foi criado. Corrija a variável e faça o "Voltar os dados de teste ao início" (seção 9). |
 | "**Muitas tentativas seguidas**" ao entrar | É a proteção contra senha errada (5 erros = 15 minutos). Espere 15 minutos ou volte os dados ao início (seção 9). |

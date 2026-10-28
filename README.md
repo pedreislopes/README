@@ -6,7 +6,7 @@ areia, tijolo e outros materiais em várias lojas da sua região e compra tudo e
 Esta é a primeira versão (MVP): funciona no seu computador, com lojas, produtos e usuários **fictícios**.
 Não há pagamento real nem entrega.
 
-- **Quer testar pelo navegador (até pelo iPad), sem computador?** Siga o
+- **Quer testar pela internet, sem instalar nada (no computador ou no iPad)?** Siga o
   [PUBLICAR-TESTE.md](PUBLICAR-TESTE.md): publica um ambiente de **teste** na Vercel, com banco Neon.
 - Para o lançamento real, veja o [PROXIMOS-PASSOS.md](PROXIMOS-PASSOS.md).
 

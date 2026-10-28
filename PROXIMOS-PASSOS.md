@@ -34,7 +34,7 @@ e **não guardam arquivos** entre uma execução e outra. Por isso, para publica
 
 ### 1.2 O que já está pronto: o ambiente de TESTE
 
-O projeto **já sabe** rodar na Vercel com PostgreSQL (Neon). O guia para o iPad está em
+O projeto **já sabe** rodar na Vercel com PostgreSQL (Neon). O guia passo a passo (computador ou iPad) está em
 [PUBLICAR-TESTE.md](PUBLICAR-TESTE.md). Resumo do que foi feito no código:
 
 - `prisma/postgres/` tem a versão PostgreSQL do banco e suas migrações (gerada a partir de
