@@ -8,9 +8,14 @@
 @theme inline {
   --color-marca-50: #fff7ed;
   --color-marca-100: #ffedd5;
+  --color-marca-200: #fed7aa;
+  --color-marca-300: #fdba74;
+  --color-marca-400: #fb923c;
   --color-marca-500: #f97316;
   --color-marca-600: #ea580c;
   --color-marca-700: #c2410c;
+  --color-marca-800: #9a3412;
+  --color-marca-900: #7c2d12;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

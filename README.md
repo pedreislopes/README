@@ -21,6 +21,7 @@ Não há pagamento real nem entrega.
 5. [O que o Solid faz](#5-o-que-o-solid-faz)
 6. [Testes automáticos](#6-testes-automáticos)
 7. [Para quem for programar](#7-para-quem-for-programar)
+8. [Fotos das categorias (trocar as ilustrações)](#8-fotos-das-categorias-trocar-as-ilustrações)
 
 ---
 
@@ -156,10 +157,13 @@ As outras lojas também têm login (senha `solid123`): `ceilandia@`, `aguasclara
 - Regiões: as **35 regiões administrativas oficiais do DF** e as principais cidades do **Entorno**,
   separadas em "DF" e "Entorno" no filtro da busca (com as opções "Todo o DF" e "Todo o Entorno").
   A lista fica em `src/config/constantes.ts`.
-- 44 materiais em 10 categorias, com diferença de 8% a 20% entre a loja mais barata e a mais cara.
+- 60 materiais em 11 categorias, com diferença de 8% a 20% entre a loja mais barata e a mais cara.
   As lojas com anúncio (Destaque/Premium) nunca são as mais baratas, para os selos aparecerem juntos.
 - Faixas de atacado só para CNPJ, **exceto** em *Argamassa colante AC-I* e *Bloco de concreto
   14x19x39*, que valem também para CPF.
+- **Ferragens, ferramentas e EPI**: pregos, parafusos, arames, discos, fita isolante, luvas, óculos,
+  capacete e ferramentas de marca (martelo, trena, nível, colher de pedreiro, desempenadeira), em que
+  cada oferta mostra a **marca** em destaque.
 - 6 pedidos de exemplo e 1 sugestão de material aguardando o administrador.
 - Tudo isso fica em `prisma/dados-teste.ts`, em listas fáceis de ler e editar.
 
@@ -172,7 +176,10 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 
 1. **Busca** — sem entrar na conta, busque `cimento cp2`, `areia media`, `tijolo 8 furo` e `pedra`.
    Veja o selo **Melhor preço**, as **Ofertas premium/destaque** no topo com "Patrocinado ⓘ" e o
-   preço por kg. Busque `areia rosa` para ver as sugestões.
+   preço por kg. Busque `areia rosa` para ver as sugestões. Toque no **?** ao lado de *Areia fina*
+   para ver a explicação do material. Em **Filtros → Região**, escolha **Todo o Entorno** ou **Lago Sul**.
+   Na página inicial, toque em **Areia e pedra** para ver o guia **Qual escolher?**. Busque `martelo`
+   para comparar preço e marca.
 2. **Carrinho** — adicione 42 sacos de cimento da Casa do Construtor Taguatinga e 2,5 m³ de areia.
    Vá ao carrinho e entre com `cnpj@teste.com`: os itens continuam lá, aparece
    "Adicione mais 8 sacos e pague…". Toque em **Levar 50 sacos** e depois em **Confirmar pedido**.
@@ -180,10 +187,15 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
    passo, compare **Menor preço por item** com **Tudo numa loja só** e monte o carrinho.
 4. **Lojista** — saia da conta e entre com `lojista@teste.com`. Veja o aviso de pedidos novos, a
    comissão de cada pedido, avance o status e cancele um pedido com motivo. Em **Produtos**, mude um
-   preço direto na lista, marque um item como **Sem estoque** e faça um reajuste de +5%.
+   preço direto na lista, marque um item como **Sem estoque** e faça um reajuste de +5%. Toque em
+   **Importar planilha**, baixe o modelo em Excel, mude alguns preços, envie e confira o resumo antes
+   de confirmar.
 5. **Administrador** — entre com `admin@teste.com`. Aprove o *Depósito Nova Era*, mude a comissão e o
    plano de anúncio de uma loja, baixe a planilha de pedidos e confira tudo em **Registro**.
-6. Quando terminar, rode `npm run banco:resetar` para voltar os dados ao início.
+6. **Esqueci minha senha** — saia da conta, toque em **Entrar → Esqueci minha senha** e informe
+   `cpf@teste.com`. Como ainda não há serviço de e-mail, o link aparece no **terminal** onde o site está
+   rodando (`npm run dev`). Abra o link, crie uma senha nova e entre com ela.
+7. Quando terminar, rode `npm run banco:resetar` para voltar os dados ao início (inclusive as senhas).
 
 ---
 
@@ -198,6 +210,8 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 | O site abre, mas sem lojas/produtos | Rode `npm run banco:resetar` (passo 1.5). |
 | "Muitas tentativas seguidas" ao entrar | É a proteção contra senhas erradas (5 erros = 15 minutos). Espere ou rode `npm run banco:resetar`. |
 | Quero começar do zero | Rode `npm run banco:resetar`. |
+| Troquei a foto de uma categoria, mas aparece a antiga | Recarregue a página com `Ctrl + Shift + R` (no Mac, `Cmd + Shift + R`). No computador, se continuar, pare o site, apague a pasta `.next` e rode `npm run dev` de novo. |
+| "Esqueci minha senha" não chega no e-mail | Normal por enquanto: ainda não há serviço de e-mail. O link aparece no terminal (no computador) ou nos **Logs** da Vercel (ambiente de teste). |
 
 ---
 
@@ -208,11 +222,20 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
   ("pedra" = brita, "massa" = argamassa, "bloco" = tijolo de concreto). Lista em `src/config/sinonimos.ts`.
 - **Comparação justa**: preço por kg, m³, metro ou unidade, para comparar embalagens diferentes. O
   selo **Melhor preço** vai para a oferta realmente mais barata.
-- **Filtros** por região do DF, categoria e faixa de preço.
+- **Filtros** por região (as **35 regiões administrativas** do DF e as principais cidades do
+  **Entorno**, separadas em "DF" e "Entorno", com "Todo o DF" e "Todo o Entorno"), categoria e preço.
+- **Explicação dos materiais**: ícone **?** ao lado do nome (busca, página do produto e calculadora) com
+  *o que é, para que serve e quando usar*; e o guia **Qual escolher?** na página de cada categoria.
+  **Textos em `src/config/explicacoes-materiais.ts`, com fonte e campo de revisão para o engenheiro.**
+- **Ferramentas de marca** (martelo, trena…): um material genérico com a **marca em destaque** em cada
+  oferta, para comparar preço e marca lado a lado.
 - **Anúncios identificados**: até 3 no topo (ajustável em `src/config/anuncios.ts`). Lojas **Premium**
   vêm primeiro, depois **Destaque**, cada plano ordenado por preço e com rodízio justo quando há mais
   lojas que vagas. A palavra **"Patrocinado"** fica sempre visível (Código de Defesa do Consumidor).
 - **Cadastro** como pessoa física (CPF) ou empresa (CNPJ). Empresas veem **preço de atacado**.
+- **Esqueci minha senha**: link por e-mail que vale 30 minutos e uma única vez; a tela nunca revela se
+  o e-mail tem cadastro. Sem serviço de e-mail configurado, o link aparece no registro do servidor
+  (para testes). Para ligar o envio de verdade (Resend), veja o começo de `src/lib/email.ts`.
 - **Carrinho** com itens de várias lojas, que não some ao entrar na conta; quantidades no formato vendido
   (sacos inteiros, areia de 0,5 em 0,5 m³); faixa de atacado automática; incentivo "adicione mais X";
   aviso se a loja mudar o preço antes da confirmação.
@@ -227,6 +250,11 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 - Status do pedido: Novo → Recebido → Separado → Entregue; cancelamento com motivo antes de separar.
 - Produtos: cadastrar, editar, remover, **edição rápida de preço**, **Disponível / Sem estoque**,
   **reajuste em massa** em %, faixas de atacado (só CNPJ ou também CPF), busca na própria lista.
+- **Importar planilha** (Excel .xlsx ou CSV): baixa o modelo já preenchido com os produtos da loja,
+  altera preços, faixas de atacado e disponibilidade, envia e vê o resumo antes de gravar ("12 preços
+  alterados, 3 produtos novos, 2 erros"), com os erros apontados **linha por linha**. Cada importação
+  fica no **histórico** da loja.
+- Nas **ferramentas de marca**, a marca é obrigatória no cadastro.
 - **Sugerir material** que não está no catálogo; ver o **plano de anúncio** da loja.
 - Loja pendente usa o painel normalmente, com o aviso de que ainda não aparece na busca.
 
@@ -235,12 +263,13 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 - **Lojas**: aprovar, recusar (com motivo), suspender (com motivo) e reativar; comissão (vale só para
   pedidos novos); **plano de anúncio** (Nenhum, Destaque ou Premium).
 - **Relatório** de pedidos e comissões por período, loja e situação, com **planilha CSV**.
-- **Catálogo**: incluir materiais e aprovar/recusar sugestões dos lojistas.
+- **Catálogo**: incluir materiais (com a opção "ferramenta de marca") e aprovar/recusar sugestões dos lojistas.
 - **Registro (auditoria)** de todas as ações do administrador: quem fez, o quê e quando.
 
 ### Segurança
 - Senhas com criptografia forte (bcrypt); login com mensagem única e o mesmo tempo de resposta, para não
-  revelar quem tem cadastro; bloqueio após 5 erros seguidos.
+  revelar quem tem cadastro; bloqueio após 5 erros seguidos. Redefinir a senha desconecta a conta de
+  todos os aparelhos.
 - CPF/CNPJ validados e sem repetição; documento **mascarado** na tela; aceite de Termos e Privacidade
   registrado (LGPD). Textos provisórios em `/termos` e `/privacidade`.
 - Cada página e cada ação confere quem está pedindo: cliente, lojista e administrador só acessam o que é
@@ -294,7 +323,11 @@ npm run lint           # verificador de código
 | `prisma/schema.prisma` | Estrutura do banco de dados (comentada) |
 | `prisma/dados-teste.ts` / `prisma/seed.ts` | Dados de teste e o programa que os grava |
 | `e2e/` | Testes de ponta a ponta |
-| `PROXIMOS-PASSOS.md` | Como publicar, o que falta antes do lançamento e custos estimados |
+| `src/config/explicacoes-materiais.ts` | Explicações dos materiais e guias "Qual escolher?" (para o engenheiro revisar) |
+| `public/categorias/` | Imagens das categorias da página inicial (veja a seção 8) |
+| `scripts/` | Publicação na Vercel, cópia PostgreSQL do banco, ilustrações das categorias |
+| `PROXIMOS-PASSOS.md` | Como publicar, o que falta antes do lançamento, integração de estoque por API e custos |
+| `CREDITOS-IMAGENS.md` | Origem e licença de cada imagem usada no site |
 
 ### Regras de ouro do código
 - Dinheiro sempre em **centavos** (números inteiros).
@@ -302,3 +335,48 @@ npm run lint           # verificador de código
 - Toda página e ação restrita começa verificando quem está pedindo (`exigirLoja()`, `exigirAdmin()`,
   `usuarioAtual()`), **inclusive dentro dos painéis** (a "moldura" da página não basta).
 - Toda ação do administrador grava o registro de auditoria na mesma transação (`registrarAcao`).
+
+---
+
+## 8. Fotos das categorias (trocar as ilustrações)
+
+A página inicial mostra uma imagem para cada categoria. Por enquanto são **ilustrações** feitas para o
+Solid. Para trocar por **fotos reais**:
+
+1. **Escolha a foto** num banco gratuito com uso comercial liberado: [Unsplash](https://unsplash.com) ou
+   [Pexels](https://www.pexels.com). Prefira fotos do material "na hora" (pilha de areia, tijolos,
+   sacos de cimento **sem marca aparecendo**), com fundo simples.
+2. **Formato e tamanho ideais**:
+   - **JPG**, na horizontal, proporção **4:3** — o ideal é **1200 × 900 pixels** (no mínimo 800 × 600).
+   - Até **500 KB** (os sites de fotos oferecem baixar em tamanho "Médio"/"Medium", que já serve).
+   - Se a foto não for 4:3, tudo bem: o site corta as bordas para caber. Deixe o material no **centro**.
+3. **Dê ao arquivo o MESMO nome** da imagem que vai substituir (tudo minúsculo, sem acentos):
+
+   | Categoria | Nome do arquivo |
+   |---|---|
+   | Cimento e argamassa | `cimento-e-argamassa.jpg` |
+   | Areia e pedra | `areia-e-pedra.jpg` |
+   | Tijolos e blocos | `tijolos-e-blocos.jpg` |
+   | Aço para estrutura | `aco-para-estrutura.jpg` |
+   | Ferragens, ferramentas e EPI | `ferragens-ferramentas-e-epi.jpg` |
+   | Hidráulica | `hidraulica.jpg` |
+   | Elétrica | `eletrica.jpg` |
+   | Pisos e revestimentos | `pisos-e-revestimentos.jpg` |
+   | Tintas | `tintas.jpg` |
+   | Madeiras | `madeiras.jpg` |
+   | Telhas e coberturas | `telhas-e-coberturas.jpg` |
+
+4. **Coloque o arquivo na pasta `public/categorias/`**, substituindo o antigo.
+   - **Pelo GitHub (navegador, até no iPad):** abra o repositório → pasta `public` → `categorias` →
+     **Add file → Upload files** → arraste a foto (com o nome certo) → **Commit changes**. A Vercel
+     publica sozinha em poucos minutos.
+   - **No computador:** copie a foto para a pasta e rode o site normalmente.
+5. **Registre a origem** da foto no arquivo [CREDITOS-IMAGENS.md](CREDITOS-IMAGENS.md) (autor, site e
+   endereço da foto). Não é obrigatório pelas licenças do Unsplash/Pexels, mas é a boa prática e ajuda
+   se alguém perguntar de onde veio a imagem.
+
+**Você não precisa redimensionar nem converter nada:** o site (componente de imagem do Next.js) gera
+sozinho versões menores e mais leves (WebP/AVIF) para cada tela, e o celular baixa só o tamanho de que
+precisa. Para refazer as ilustrações originais de uma categoria:
+`node scripts/ilustracoes-categorias.mjs areia-e-pedra` (sem o nome, refaz **todas** e apaga as fotos).
+

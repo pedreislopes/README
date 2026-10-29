@@ -35,5 +35,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Protege tudo, menos os arquivos internos de estilo/imagem do próprio Next.js
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // e as imagens públicas das categorias (o otimizador de imagens da Vercel
+  // precisa buscá-las sem senha; são só ilustrações/fotos, nada sigiloso)
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|categorias/).*)"],
 };
