@@ -54,17 +54,15 @@ export default async function Busca(props: PageProps<"/busca">) {
 
   // Anúncios no topo (até MAX_ANUNCIOS_NO_TOPO): Premium primeiro, depois Destaque.
   // Cada plano só gira (rodízio) quando tem mais lojas do que vagas disponíveis.
-  const anuncios = (() => {
+  const anuncios = await (async () => {
     if (!destaque) return [];
     const { premium, destaque: lojasDestaque, produto } = destaque;
     const vagasDestaque = Math.max(0, MAX_ANUNCIOS_NO_TOPO - premium.length);
-    return escolherAnuncios(
-      premium,
-      lojasDestaque,
-      MAX_ANUNCIOS_NO_TOPO,
+    const [rodadaPremium, rodadaDestaque] = await Promise.all([
       premium.length > MAX_ANUNCIOS_NO_TOPO ? proximaRodada(`${produto.id}:PREMIUM`) : 0,
       lojasDestaque.length > vagasDestaque && vagasDestaque > 0 ? proximaRodada(`${produto.id}:DESTAQUE`) : 0,
-    );
+    ]);
+    return escolherAnuncios(premium, lojasDestaque, MAX_ANUNCIOS_NO_TOPO, rodadaPremium, rodadaDestaque);
   })();
 
   // Sugestões quando nada foi encontrado: parecidos, ou os mais procurados

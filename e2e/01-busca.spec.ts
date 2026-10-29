@@ -102,6 +102,9 @@ test.describe("Busca e comparação", () => {
       }
       // 3 buscas, 1 vaga, 3 lojas Destaque: cada uma aparece 1 vez
       expect([...aparicoesDestaque.values()]).toEqual([1, 1, 1]);
+      // O contador do rodízio fica no banco (vale para todas as cópias do site na Vercel)
+      const contador = await db.adRotation.findUniqueOrThrow({ where: { key: "cimento-cp2:DESTAQUE" } });
+      expect(contador.round).toBeGreaterThanOrEqual(3);
     } finally {
       for (const l of antes) await db.store.update({ where: { id: l.id }, data: { adPlan: l.adPlan } });
     }
