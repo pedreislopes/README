@@ -11,9 +11,14 @@ const SITUACAO: Record<string, { texto: string; cor: string }> = {
   RECUSADA: { texto: "Recusada", cor: "bg-slate-200 text-slate-700" },
 };
 
-export default async function Sugerir() {
+export default async function Sugerir(props: PageProps<"/loja/sugerir">) {
   const { loja } = await exigirLoja();
-  const sugestoes = await db.materialSuggestion.findMany({ where: { storeId: loja.id }, orderBy: { createdAt: "desc" } });
+  const { tipo, material, ean } = await props.searchParams;
+  const [sugestoes, tipos] = await Promise.all([
+    db.materialSuggestion.findMany({ where: { storeId: loja.id }, orderBy: { createdAt: "desc" } }),
+    // Tipos de produto de marca (martelo, tinta, piso…)
+    db.product.findMany({ where: { brandMatters: true }, select: { id: true, name: true, category: true }, orderBy: [{ category: "asc" }, { name: "asc" }] }),
+  ]);
 
   return (
     <div className="space-y-5">
@@ -24,7 +29,14 @@ export default async function Sugerir() {
           analisa a sugestão e, se aprovada, o material aparece na lista de cadastro.
         </p>
       </div>
-      <FormularioSugestao />
+      <FormularioSugestao
+        tipos={tipos}
+        inicial={{
+          tipo: tipo === "marca" ? "marca" : "material",
+          material: typeof material === "string" ? material : "",
+          ean: typeof ean === "string" ? ean.replace(/\D/g, "").slice(0, 14) : "",
+        }}
+      />
       {sugestoes.length > 0 && (
         <section className="space-y-2">
           <h3 className="font-bold">Suas sugestões</h3>
@@ -38,7 +50,7 @@ export default async function Sugerir() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500">
-                  {s.category} · enviada em {s.createdAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                  {s.kind === "PRODUTO_MARCA" ? `Produto de marca${s.ean ? ` · código de barras ${s.ean}` : ""}` : s.category} · enviada em {s.createdAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
                 </p>
                 {s.reviewNote && <p className="mt-1 text-sm text-slate-700">Resposta: {s.reviewNote}</p>}
               </li>

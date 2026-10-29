@@ -2,7 +2,7 @@
 import { CATEGORIAS, UNIDADES_BASE, type UnidadeBase } from "@/config/constantes";
 import { exigirAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
-import { FormularioMaterial, RevisarSugestao } from "./Formularios";
+import { FormularioMaterial, RevisarSugestao, SugestaoDeMarca } from "./Formularios";
 
 export const metadata = { title: "Materiais" };
 
@@ -27,12 +27,19 @@ export default async function MateriaisAdmin() {
         {sugestoes.length === 0 ? (
           <p className="text-sm text-slate-600">Nenhuma sugestão aguardando análise.</p>
         ) : (
-          sugestoes.map((s) => (
+          sugestoes.map((s) =>
+            s.kind === "PRODUTO_MARCA" ? (
+              <SugestaoDeMarca
+                key={s.id}
+                sugestao={{ id: s.id, nome: s.name, ean: s.ean, observacao: s.note, loja: s.store.name, tipo: produtos.find((p) => p.id === s.typeProductId)?.name ?? "" }}
+              />
+            ) : (
             <RevisarSugestao
               key={s.id}
               sugestao={{ id: s.id, nome: s.name, categoria: s.category, unidade: s.baseUnit, observacao: s.note, loja: s.store.name }}
             />
-          ))
+            ),
+          )
         )}
         {analisadas.length > 0 && (
           <details className="text-sm">
@@ -66,7 +73,10 @@ export default async function MateriaisAdmin() {
               <ul className="mt-2 space-y-1 text-sm">
                 {daCategoria.map((p) => (
                   <li key={p.id} className="flex justify-between gap-2">
-                    <span>{p.name}</span>
+                    <span>
+                      {p.name}
+                      {p.brandMatters && <span className="ml-1 rounded bg-violet-100 px-1.5 text-xs font-semibold text-violet-800">de marca</span>}
+                    </span>
                     <span className="shrink-0 text-slate-500">
                       por {UNIDADES_BASE[p.baseUnit as UnidadeBase] ?? p.baseUnit} · {p._count.offers} ofertas
                     </span>

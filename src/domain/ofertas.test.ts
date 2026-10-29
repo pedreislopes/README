@@ -18,10 +18,10 @@ describe("validarOferta", () => {
     expect(validarOferta(base)).toEqual({});
   });
 
-  it("ferramenta de marca: a marca é obrigatória", () => {
-    expect(validarOferta({ ...base, exigeMarca: true, brand: " " }).brand).toMatch(/Informe a marca/);
-    expect(validarOferta({ ...base, exigeMarca: true, brand: "Tramontina" })).toEqual({});
-    expect(validarOferta({ ...base, brand: null })).toEqual({}); // nos outros materiais é opcional
+  it("produto de marca: é obrigatório escolher o item do catálogo (marca e modelo)", () => {
+    expect(validarOferta({ ...base, exigeItemDeMarca: true, catalogItemId: null }).catalogItemId).toMatch(/Escolha o produto/);
+    expect(validarOferta({ ...base, exigeItemDeMarca: true, catalogItemId: "item-1" })).toEqual({});
+    expect(validarOferta({ ...base, catalogItemId: null })).toEqual({}); // materiais padronizados
   });
 
   it("exige material, embalagem, quantidade e preço", () => {

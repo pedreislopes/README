@@ -8,6 +8,7 @@ import { NomeMaterial } from "@/components/NomeMaterial";
 import { CATEGORIAS, regioesDoFiltro, type Categoria } from "@/config/constantes";
 import { MATERIAIS_POPULARES } from "@/config/sinonimos";
 import { buscarProdutos } from "@/domain/busca";
+import { marcasDasOfertas } from "@/domain/marcas";
 import { MAX_ANUNCIOS_NO_TOPO } from "@/config/anuncios";
 import { escolherAnuncios, montarResultados, type Ordem } from "@/domain/resultados";
 import { proximaRodada } from "@/lib/anuncios";
@@ -31,6 +32,7 @@ export default async function Busca(props: PageProps<"/busca">) {
     regiao: regioesDoFiltro(texto(params.regiao)) ? texto(params.regiao) : "",
     categoria: CATEGORIAS.find((c) => c === texto(params.categoria)) ?? "",
     min: texto(params.min),
+    marca: texto(params.marca),
     max: texto(params.max),
     // Padrão: menor preço por unidade padronizada (o 1º resultado é sempre o "Melhor preço")
     ordem: texto(params.ordem) === "preco" ? "preco" : "unidade",
@@ -44,10 +46,14 @@ export default async function Busca(props: PageProps<"/busca">) {
   const { ofertas, produtos } = await carregarCatalogo();
   const { encontrados, sugeridos } = buscarProdutos(produtos, valores.q);
   const naCategoria = encontrados.filter((p) => !valores.categoria || p.category === valores.categoria);
+  // Marcas das ofertas encontradas (opções do filtro "Marca")
+  const idsEncontrados = new Set(naCategoria.map((p) => p.id));
+  const marcas = marcasDasOfertas(ofertas.filter((o) => idsEncontrados.has(o.productId)).map((o) => ({ marca: o.brand })));
 
   const { grupos, destaque } = montarResultados(naCategoria, ofertas, {
     ordem: valores.ordem as Ordem,
     regioes: filtroRegiao?.regioes,
+    marca: valores.marca || undefined,
     precoMin: reaisParaCentavos(valores.min) ?? undefined,
     precoMax: reaisParaCentavos(valores.max) ?? undefined,
   });
@@ -73,7 +79,7 @@ export default async function Busca(props: PageProps<"/busca">) {
 
   return (
     <div className="space-y-5">
-      <FiltrosBusca valores={valores} />
+      <FiltrosBusca valores={valores} marcas={marcas} />
 
       {nadaBuscado ? (
         <section>
@@ -148,6 +154,7 @@ export default async function Busca(props: PageProps<"/busca">) {
                 plano={plano}
                 nomeProduto={destaque.produto.name}
                 destacarMarca={destaque.produto.brandMatters}
+                categoria={destaque.produto.category}
               />
             ))}
 
@@ -174,6 +181,7 @@ export default async function Busca(props: PageProps<"/busca">) {
                     papel={papel}
                     melhorPreco={oferta.id === melhorPrecoId}
                     destacarMarca={produto.brandMatters}
+                    categoria={produto.category}
                   />
                 ))}
                 {doProduto.length > limite && (

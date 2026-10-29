@@ -6,6 +6,7 @@ import { UNIDADES_BASE, type Papel, type PlanoPago, type UnidadeBase } from "@/c
 import { atacadoSoParaCnpj, faixasDisponiveis, precoPorUnidadeBase } from "@/domain/precos";
 import { formatarPrecoUnidade, formatarReais } from "@/lib/dinheiro";
 import { AdicionarAoCarrinho } from "./AdicionarAoCarrinho";
+import { FotoProduto } from "./FotoProduto";
 import { SeloDestaque } from "./SeloDestaque";
 
 export type OfertaParaCartao = {
@@ -18,6 +19,8 @@ export type OfertaParaCartao = {
   tiersForCpf: boolean;
   tiers: { minQuantity: number; priceCents: number }[];
   store: { name: string; region: string };
+  /** Produto de marca: item do catálogo central (modelo e foto) */
+  catalogItem?: { model: string; photoId: string | null } | null;
 };
 
 type Props = {
@@ -29,11 +32,13 @@ type Props = {
   plano?: PlanoPago;
   /** Mostra o nome do produto no cartão (usado na oferta destaque do topo) */
   nomeProduto?: string;
-  /** Ferramenta de marca: a marca aparece em destaque, ao lado do nome da loja */
+  /** Produto de marca: marca e modelo em destaque, com a foto ao lado */
   destacarMarca?: boolean;
+  /** Categoria (ilustração usada quando o produto de marca não tem foto) */
+  categoria?: string;
 };
 
-export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, nomeProduto, destacarMarca }: Props) {
+export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, nomeProduto, destacarMarca, categoria }: Props) {
   const unidade = UNIDADES_BASE[unidadeBase as UnidadeBase] ?? unidadeBase;
   const porUnidade = precoPorUnidadeBase(oferta.priceCents, oferta.baseQuantity);
   const faixas = faixasDisponiveis(oferta, papel);
@@ -64,17 +69,27 @@ export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, n
 
       {nomeProduto && <p className="mb-1 text-sm font-medium text-slate-600">{nomeProduto}</p>}
 
+      {destacarMarca && (
+        <div className="mb-2 flex items-center gap-3">
+          <FotoProduto
+            fotoId={oferta.catalogItem?.photoId ?? null}
+            categoria={categoria ?? ""}
+            descricao={[oferta.brand, oferta.catalogItem?.model].filter(Boolean).join(" ")}
+            tamanho={64}
+          />
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 text-sm font-bold text-slate-900">
+              <Tag className="h-3.5 w-3.5 text-marca-600" aria-hidden />
+              <span className="sr-only">Marca:</span>
+              {oferta.brand ?? "Marca não informada"}
+            </span>
+            {oferta.catalogItem && <p className="mt-0.5 text-sm text-slate-700">{oferta.catalogItem.model}</p>}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {destacarMarca && (
-            <p className="mb-1">
-              <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 text-sm font-bold text-slate-900">
-                <Tag className="h-3.5 w-3.5 text-marca-600" aria-hidden />
-                <span className="sr-only">Marca:</span>
-                {oferta.brand ?? "Marca não informada"}
-              </span>
-            </p>
-          )}
           <h3 className="text-base leading-snug font-bold text-slate-900">{oferta.store.name}</h3>
           <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-500">
             <MapPin className="h-3.5 w-3.5 shrink-0" />

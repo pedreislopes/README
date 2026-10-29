@@ -10,6 +10,15 @@ import { UNIDADES_BASE, type UnidadeBase } from "@/config/constantes";
 import { excluirProduto, salvarProduto } from "@/lib/acoes-loja";
 
 type Material = { id: string; name: string; category: string; baseUnit: string; brandMatters: boolean };
+/** Item do catálogo central de produtos de marca */
+type ItemDeMarca = {
+  id: string;
+  productId: string;
+  brand: string;
+  model: string;
+  ean: string | null;
+  packageLabel: string;
+};
 
 export type ValoresProduto = {
   id?: string;
@@ -18,6 +27,7 @@ export type ValoresProduto = {
   baseQuantity: string;
   preco: string;
   brand: string;
+  catalogItemId: string;
   quantityStep: string;
   tiersForCpf: boolean;
   active: boolean;
@@ -25,11 +35,31 @@ export type ValoresProduto = {
 };
 
 const SUGESTOES_EMBALAGEM = [
-  "Saco 50 kg", "Saco 40 kg", "Saco 25 kg", "Saco 20 kg", "m³", "Milheiro", "Unidade",
-  "Barra 12 m", "Barra 6 m", "Lata 18 L", "Rolo 100 m", "Rolo 50 m", "Caixa 2,5 m²", "Pacote 1 kg",
+  "Saco 50 kg",
+  "Saco 40 kg",
+  "Saco 25 kg",
+  "Saco 20 kg",
+  "m³",
+  "Milheiro",
+  "Unidade",
+  "Barra 12 m",
+  "Barra 6 m",
+  "Lata 18 L",
+  "Rolo 100 m",
+  "Rolo 50 m",
+  "Caixa 2,5 m²",
+  "Pacote 1 kg",
 ];
 
-export function FormularioProduto({ materiais, valores }: { materiais: Material[]; valores: ValoresProduto }) {
+export function FormularioProduto({
+  materiais,
+  itens,
+  valores,
+}: {
+  materiais: Material[];
+  itens: ItemDeMarca[];
+  valores: ValoresProduto;
+}) {
   const [estado, acao, enviando] = useActionState(salvarProduto, {});
   const e = estado.erros ?? {};
   // Depois de um erro, os campos voltam com o que foi digitado
@@ -38,8 +68,27 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
   const marcado = (campo: string, padrao: boolean) => (env ? env[campo] === "on" : padrao);
   // O material escolhido fica guardado só para mostrar a unidade ("em kg", "em m³").
   // O campo em si não é "controlado", para não se apagar quando o formulário volta com erro.
-  const [productId, setProductId] = useState(valores.productId);
+  const [productId, setProductId] = useState(v("productId", valores.productId));
   const material = materiais.find((m) => m.id === productId);
+  // Produto de marca: o lojista só escolhe o item do catálogo (ou digita o código de barras)
+  const [itemId, setItemId] = useState(v("catalogItemId", valores.catalogItemId));
+  const [ean, setEan] = useState("");
+  const [avisoEan, setAvisoEan] = useState<string | null>(null);
+  const itensDoMaterial = itens.filter((i) => i.productId === productId);
+  const itemEscolhido = itens.find((i) => i.id === itemId && i.productId === productId);
+  const procurarEan = (texto: string) => {
+    setEan(texto);
+    const digitos = texto.replace(/\D/g, "");
+    if (digitos.length < 8) return setAvisoEan(null);
+    const achado = itens.find((i) => i.ean === digitos);
+    if (achado) {
+      setProductId(achado.productId);
+      setItemId(achado.id);
+      setAvisoEan(null);
+    } else if (digitos.length >= 12) {
+      setAvisoEan("Este código de barras ainda não está no catálogo Solid.");
+    }
+  };
   const unidade = material ? (UNIDADES_BASE[material.baseUnit as UnidadeBase] ?? material.baseUnit) : null;
   const categorias = [...new Set(materiais.map((m) => m.category))];
   const faixas = [0, 1, 2].map((i) => ({
@@ -61,8 +110,11 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
         <select
           id="productId"
           name="productId"
-          defaultValue={v("productId", valores.productId)}
-          onChange={(ev) => setProductId(ev.target.value)}
+          value={productId}
+          onChange={(ev) => {
+            setProductId(ev.target.value);
+            setItemId("");
+          }}
           className={estiloCampo}
           aria-invalid={e.productId ? true : undefined}
         >
@@ -88,46 +140,117 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="packageLabel" className="block text-sm font-semibold">
-            Como é vendido
+      {!valores.id && itens.length > 0 && (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-3">
+          <label htmlFor="ean" className="block text-sm font-semibold">
+            Produto de marca? Digite o código de barras <span className="font-normal text-slate-500">(opcional)</span>
           </label>
           <input
-            id="packageLabel"
-            name="packageLabel"
-            list="sugestoes-embalagem"
-            defaultValue={v("packageLabel", valores.packageLabel)}
-            placeholder="Ex.: Saco 50 kg"
+            id="ean"
+            inputMode="numeric"
+            autoComplete="off"
+            value={ean}
+            onChange={(ev) => procurarEan(ev.target.value)}
+            placeholder="Ex.: 7891234567890"
             className={estiloCampo}
-            aria-invalid={e.packageLabel ? true : undefined}
           />
-          <datalist id="sugestoes-embalagem">
-            {SUGESTOES_EMBALAGEM.map((s) => (
-              <option key={s} value={s} />
+          <p className="mt-1 text-xs text-slate-500">
+            Achamos o produto sozinhos: marca, modelo, embalagem e características.
+          </p>
+          {avisoEan && (
+            <p className="mt-1 text-sm text-amber-800">
+              {avisoEan}{" "}
+              <Link href={`/loja/sugerir?tipo=marca&ean=${ean.replace(/\D/g, "")}`} className="font-semibold underline">
+                Sugerir este produto
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
+
+      {material?.brandMatters ? (
+        <div>
+          <label htmlFor="catalogItemId" className="block text-sm font-semibold">
+            Produto (marca e modelo)
+          </label>
+          <select
+            id="catalogItemId"
+            name="catalogItemId"
+            value={itemEscolhido ? itemId : ""}
+            onChange={(ev) => setItemId(ev.target.value)}
+            className={estiloCampo}
+            aria-invalid={e.catalogItemId ? true : undefined}
+          >
+            <option value="">Escolha a marca e o modelo…</option>
+            {itensDoMaterial.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.brand} — {i.model} ({i.packageLabel})
+              </option>
             ))}
-          </datalist>
-          <MensagemErro erro={e.packageLabel} />
+          </select>
+          <MensagemErro erro={e.catalogItemId} />
+          {itemEscolhido && (
+            <p className="mt-1 text-sm text-slate-600">
+              Embalagem: <strong>{itemEscolhido.packageLabel}</strong>
+              {itemEscolhido.ean && <> · Código de barras {itemEscolhido.ean}</>}. As características vêm do catálogo
+              Solid: você só informa o preço e a disponibilidade.
+            </p>
+          )}
+          <p className="mt-1 text-xs text-slate-500">
+            Não está na lista?{" "}
+            <Link
+              href={`/loja/sugerir?tipo=marca&material=${productId}`}
+              className="font-semibold text-marca-700 underline"
+            >
+              Sugerir produto de marca
+            </Link>{" "}
+            (só marca, modelo e código de barras).
+          </p>
         </div>
-        <div>
-          <label htmlFor="baseQuantity" className="block text-sm font-semibold">
-            Quanto vem {unidade ? `(em ${unidade})` : ""}
-          </label>
-          <input
-            id="baseQuantity"
-            name="baseQuantity"
-            inputMode="decimal"
-            defaultValue={v("baseQuantity", valores.baseQuantity)}
-            placeholder="Ex.: 50"
-            className={estiloCampo}
-            aria-invalid={e.baseQuantity ? true : undefined}
-          />
-          <MensagemErro erro={e.baseQuantity} />
-        </div>
-      </div>
-      <p className="-mt-3 text-xs text-slate-500">
-        Usado para comparar preços entre lojas. Ex.: saco de 50 kg → 50; milheiro → 1000; m³ → 1.
-      </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="packageLabel" className="block text-sm font-semibold">
+                Como é vendido
+              </label>
+              <input
+                id="packageLabel"
+                name="packageLabel"
+                list="sugestoes-embalagem"
+                defaultValue={v("packageLabel", valores.packageLabel)}
+                placeholder="Ex.: Saco 50 kg"
+                className={estiloCampo}
+                aria-invalid={e.packageLabel ? true : undefined}
+              />
+              <datalist id="sugestoes-embalagem">
+                {SUGESTOES_EMBALAGEM.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+              <MensagemErro erro={e.packageLabel} />
+            </div>
+            <div>
+              <label htmlFor="baseQuantity" className="block text-sm font-semibold">
+                Quanto vem {unidade ? `(em ${unidade})` : ""}
+              </label>
+              <input
+                id="baseQuantity"
+                name="baseQuantity"
+                inputMode="decimal"
+                defaultValue={v("baseQuantity", valores.baseQuantity)}
+                placeholder="Ex.: 50"
+                className={estiloCampo}
+                aria-invalid={e.baseQuantity ? true : undefined}
+              />
+              <MensagemErro erro={e.baseQuantity} />
+            </div>
+          </div>
+          <p className="-mt-3 text-xs text-slate-500">
+            Usado para comparar preços entre lojas. Ex.: saco de 50 kg → 50; milheiro → 1000; m³ → 1.
+          </p>
+        </>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -145,24 +268,14 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
           />
           <MensagemErro erro={e.priceCents} />
         </div>
-        <div>
-          <label htmlFor="brand" className="block text-sm font-semibold">
-            Marca{" "}
-            {material?.brandMatters ? (
-              <span className="font-normal text-marca-700">(obrigatória)</span>
-            ) : (
-              <span className="font-normal text-slate-500">(opcional)</span>
-            )}
-          </label>
-          <input
-            id="brand"
-            name="brand"
-            defaultValue={v("brand", valores.brand)}
-            className={estiloCampo}
-            aria-invalid={e.brand ? true : undefined}
-          />
-          <MensagemErro erro={e.brand} />
-        </div>
+        {!material?.brandMatters && (
+          <div>
+            <label htmlFor="brand" className="block text-sm font-semibold">
+              Marca <span className="font-normal text-slate-500">(opcional)</span>
+            </label>
+            <input id="brand" name="brand" defaultValue={v("brand", valores.brand)} className={estiloCampo} />
+          </div>
+        )}
       </div>
 
       {material?.baseUnit === "m3" ? (
@@ -170,7 +283,12 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
           <label htmlFor="quantityStep" className="block text-sm font-semibold">
             Vende de quanto em quanto
           </label>
-          <select id="quantityStep" name="quantityStep" defaultValue={v("quantityStep", valores.quantityStep)} className={estiloCampo}>
+          <select
+            id="quantityStep"
+            name="quantityStep"
+            defaultValue={v("quantityStep", valores.quantityStep)}
+            className={estiloCampo}
+          >
             <option value="0.5">De 0,5 em 0,5 m³ (meio metro)</option>
             <option value="1">Só m³ inteiro</option>
           </select>
@@ -181,18 +299,37 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
 
       <fieldset className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
         <legend className="px-1 text-sm font-semibold">Preço de atacado (opcional)</legend>
-        <p className="text-xs text-slate-500">Preço mais baixo para quem compra em quantidade. Ex.: a partir de 50 sacos, R$ 36,00 cada.</p>
+        <p className="text-xs text-slate-500">
+          Preço mais baixo para quem compra em quantidade. Ex.: a partir de 50 sacos, R$ 36,00 cada.
+        </p>
         {faixas.map((f, i) => (
           <div key={i} className="flex items-center gap-2 text-sm">
             <span className="shrink-0">A partir de</span>
-            <input name={`faixaMin${i}`} inputMode="numeric" defaultValue={f.min} aria-label={`Faixa ${i + 1}: quantidade mínima`} className="w-20 rounded-lg border border-slate-300 px-2 py-2.5 text-center text-base" />
+            <input
+              name={`faixaMin${i}`}
+              inputMode="numeric"
+              defaultValue={f.min}
+              aria-label={`Faixa ${i + 1}: quantidade mínima`}
+              className="w-20 rounded-lg border border-slate-300 px-2 py-2.5 text-center text-base"
+            />
             <span className="shrink-0">por R$</span>
-            <input name={`faixaPreco${i}`} inputMode="decimal" defaultValue={f.preco} aria-label={`Faixa ${i + 1}: preço`} className="w-24 rounded-lg border border-slate-300 px-2 py-2.5 text-center text-base" />
+            <input
+              name={`faixaPreco${i}`}
+              inputMode="decimal"
+              defaultValue={f.preco}
+              aria-label={`Faixa ${i + 1}: preço`}
+              className="w-24 rounded-lg border border-slate-300 px-2 py-2.5 text-center text-base"
+            />
           </div>
         ))}
         <MensagemErro erro={e.tiers} />
         <label className="flex items-start gap-3 text-sm">
-          <input type="checkbox" name="tiersForCpf" defaultChecked={marcado("tiersForCpf", valores.tiersForCpf)} className="mt-0.5 h-5 w-5 accent-marca-600" />
+          <input
+            type="checkbox"
+            name="tiersForCpf"
+            defaultChecked={marcado("tiersForCpf", valores.tiersForCpf)}
+            className="mt-0.5 h-5 w-5 accent-marca-600"
+          />
           <span>
             Oferecer o atacado também para <strong>pessoa física (CPF)</strong>. Sem marcar, só empresas (CNPJ) veem.
           </span>
@@ -200,7 +337,12 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
       </fieldset>
 
       <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 font-semibold">
-        <input type="checkbox" name="active" defaultChecked={marcado("active", valores.active)} className="h-6 w-6 accent-emerald-600" />
+        <input
+          type="checkbox"
+          name="active"
+          defaultChecked={marcado("active", valores.active)}
+          className="h-6 w-6 accent-emerald-600"
+        />
         Disponível para venda
       </label>
 
@@ -215,7 +357,11 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
         <button
           type="button"
           onClick={() => {
-            if (window.confirm("Remover este produto da loja? Esta ação não pode ser desfeita.\n\nDica: para pausar sem apagar, use \"Sem estoque\".")) {
+            if (
+              window.confirm(
+                'Remover este produto da loja? Esta ação não pode ser desfeita.\n\nDica: para pausar sem apagar, use "Sem estoque".',
+              )
+            ) {
               void excluirProduto(valores.id!);
             }
           }}

@@ -23,6 +23,11 @@ export const ACOES_ADMIN = {
   SUGESTAO_APROVADA: "Aprovou sugestão de material",
   SUGESTAO_RECUSADA: "Recusou sugestão de material",
   RELATORIO_EXPORTADO: "Baixou relatório em planilha",
+  PRODUTO_MARCA_CRIADO: "Criou produto de marca",
+  PRODUTO_MARCA_ALTERADO: "Alterou produto de marca",
+  FOTO_APROVADA: "Aprovou foto enviada por loja",
+  FOTO_RECUSADA: "Recusou foto enviada por loja",
+  CATALOGO_IMPORTADO: "Importou planilha do catálogo de marca",
 } as const;
 export type AcaoAdmin = keyof typeof ACOES_ADMIN;
 
@@ -33,7 +38,10 @@ export type AcaoAdmin = keyof typeof ACOES_ADMIN;
 export async function registrarAcao(
   admin: Admin,
   action: AcaoAdmin,
-  alvo: { tipo: "Store" | "Order" | "Product" | "MaterialSuggestion" | "Relatorio"; id: string },
+  alvo: {
+    tipo: "Store" | "Order" | "Product" | "MaterialSuggestion" | "Relatorio" | "CatalogItem" | "PhotoSubmission" | "CatalogImport";
+    id: string;
+  },
   details: string,
   tx: Prisma.TransactionClient = db,
 ) {

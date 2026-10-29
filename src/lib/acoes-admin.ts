@@ -7,6 +7,7 @@
 // =============================================================================
 
 import { refresh } from "next/cache";
+import { modeloDe } from "@/config/caracteristicas";
 import { CATEGORIAS, PLANOS_ANUNCIO, UNIDADES_BASE, type PlanoAnuncio } from "@/config/constantes";
 import { gerarIdMaterial, validarMotivoAdmin } from "@/domain/catalogo";
 import { validarComissao } from "@/domain/pedidos";
@@ -124,7 +125,10 @@ function lerMaterial(form: FormData) {
     category: String(form.get("categoria") ?? ""),
     baseUnit: String(form.get("unidade") ?? ""),
     keywords: String(form.get("palavras") ?? "").trim().slice(0, 300),
-    brandMatters: form.get("compararMarca") === "on",
+    // Tipo de material: "" = padronizado; senão, produto de marca com estas características
+    ...((caracteristicas) => ({ brandMatters: !!caracteristicas, specTemplate: caracteristicas }))(
+      modeloDe(String(form.get("caracteristicas") ?? "")) ? String(form.get("caracteristicas")) : "",
+    ),
   };
 }
 
@@ -165,6 +169,7 @@ export async function aprovarSugestao(sugestaoId: string, form: FormData): Promi
   if (erro) return { erro };
   const sugestao = await db.materialSuggestion.findUnique({ where: { id: sugestaoId }, include: { store: true } });
   if (!sugestao || sugestao.status !== "PENDENTE") return { erro: "Esta sugestão já foi analisada." };
+  if (sugestao.kind === "PRODUTO_MARCA") return { erro: "Produto de marca: use “Completar e aprovar” (catálogo de marca)." };
   if (await db.product.findFirst({ where: { name: m.name } })) return { erro: "Já existe um material com este nome." };
 
   await db.$transaction(async (tx) => {

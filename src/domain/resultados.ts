@@ -18,11 +18,15 @@ export type OfertaDaBusca = OfertaPrecificavel & {
   id: string;
   productId: string;
   store: { id: string; region: string; adPlan: PlanoAnuncio | string };
+  /** Marca (produtos de marca e materiais com marca informada) */
+  brand?: string | null;
 };
 
 export type Filtros = {
   /** Regiões aceitas (uma só, ou todas do DF / do Entorno). Vazio = todas. */
   regioes?: readonly string[];
+  /** Só ofertas desta marca */
+  marca?: string;
   /** Faixa de preço da embalagem, em centavos */
   precoMin?: number;
   precoMax?: number;
@@ -51,6 +55,7 @@ const porUnidade = (o: OfertaPrecificavel) => precoPorUnidadeBase(o.priceCents, 
 
 function passaNosFiltros(oferta: OfertaDaBusca, filtros: Filtros): boolean {
   if (filtros.regioes?.length && !filtros.regioes.includes(oferta.store.region)) return false;
+  if (filtros.marca && oferta.brand !== filtros.marca) return false;
   if (filtros.precoMin !== undefined && oferta.priceCents < filtros.precoMin) return false;
   if (filtros.precoMax !== undefined && oferta.priceCents > filtros.precoMax) return false;
   return true;

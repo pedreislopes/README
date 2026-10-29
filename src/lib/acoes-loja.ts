@@ -8,6 +8,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { CATEGORIAS, UNIDADES_BASE, type StatusPedido } from "@/config/constantes";
+import { eanValido, normalizarEan } from "@/domain/marcas";
 import { PROXIMO_STATUS, reajustarPreco, validarOferta, validarPercentual, type ErrosOferta } from "@/domain/ofertas";
 import { db } from "./db";
 import { reaisParaCentavos } from "./dinheiro";
@@ -46,17 +47,36 @@ export async function salvarProduto(_anterior: EstadoProduto, form: FormData): P
     quantityStep: numero(form.get("quantityStep")) || 1,
     tiers,
     brand: String(form.get("brand") ?? "").trim() || null,
+    catalogItemId: null as string | null,
   };
   const material = dados.productId ? await db.product.findUnique({ where: { id: dados.productId } }) : null;
-  const erros: EstadoProduto["erros"] = validarOferta({ ...dados, exigeMarca: material?.brandMatters });
+  // Produto de marca: embalagem, quantidade e marca vêm do item do catálogo central
+  if (material?.brandMatters) {
+    const item = await db.catalogItem.findFirst({
+      where: { id: String(form.get("catalogItemId") ?? ""), productId: material.id, active: true },
+    });
+    if (item) {
+      Object.assign(dados, { catalogItemId: item.id, packageLabel: item.packageLabel, baseQuantity: item.baseQuantity, brand: item.brand });
+    }
+  }
+  const erros: EstadoProduto["erros"] = validarOferta({ ...dados, exigeItemDeMarca: material?.brandMatters });
   if (dados.productId && !material) erros.productId = "Material não encontrado.";
   if (Object.keys(erros).length > 0) return { erros, enviado, resposta: Date.now() };
 
-  // Mesma embalagem do mesmo material repetida na loja
+  // O mesmo produto repetido na loja (de marca: o mesmo item; padronizado: mesma embalagem)
   const repetida = await db.offer.findFirst({
-    where: { storeId: loja.id, productId: dados.productId, packageLabel: dados.packageLabel, NOT: id ? { id } : undefined },
+    where: {
+      storeId: loja.id,
+      NOT: id ? { id } : undefined,
+      ...(dados.catalogItemId ? { catalogItemId: dados.catalogItemId } : { productId: dados.productId, packageLabel: dados.packageLabel, catalogItemId: null }),
+    },
   });
-  if (repetida) return { erros: { packageLabel: "Você já cadastrou este material com esta embalagem." }, enviado, resposta: Date.now() };
+  if (repetida) {
+    const erro = dados.catalogItemId
+      ? { catalogItemId: "Você já cadastrou este produto." }
+      : { packageLabel: "Você já cadastrou este material com esta embalagem." };
+    return { erros: erro, enviado, resposta: Date.now() };
+  }
 
   const campos = {
     productId: dados.productId,
@@ -65,6 +85,7 @@ export async function salvarProduto(_anterior: EstadoProduto, form: FormData): P
     priceCents: dados.priceCents,
     quantityStep: dados.quantityStep,
     brand: dados.brand,
+    catalogItemId: dados.catalogItemId,
     tiersForCpf: form.get("tiersForCpf") === "on",
     active: form.get("active") === "on",
   };
@@ -167,6 +188,7 @@ export type EstadoSugestao = {
 
 export async function sugerirMaterial(_anterior: EstadoSugestao, form: FormData): Promise<EstadoSugestao> {
   const { loja } = await exigirLoja();
+  if (form.get("tipo") === "marca") return sugerirProdutoDeMarca(loja.id, form);
   const name = String(form.get("nome") ?? "").trim();
   const category = String(form.get("categoria") ?? "");
   const baseUnit = String(form.get("unidade") ?? "");
@@ -182,6 +204,44 @@ export async function sugerirMaterial(_anterior: EstadoSugestao, form: FormData)
   if (repetida) return { erro: "Você já enviou esta sugestão. Aguarde a análise.", resposta: Date.now(), enviado };
 
   await db.materialSuggestion.create({ data: { storeId: loja.id, name, category, baseUnit, note } });
+  refresh();
+  return { ok: true, resposta: Date.now() };
+}
+
+/** Produto de marca: a loja informa só o tipo, a marca, o modelo e o código de barras */
+async function sugerirProdutoDeMarca(storeId: string, form: FormData): Promise<EstadoSugestao> {
+  const enviado = Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)]));
+  const erro = (texto: string) => ({ erro: texto, resposta: Date.now(), enviado });
+  const tipo = await db.product.findFirst({ where: { id: String(form.get("tipoProduto") ?? ""), brandMatters: true } });
+  const brand = String(form.get("marca") ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
+  const model = String(form.get("modelo") ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const ean = normalizarEan(String(form.get("codigoBarras") ?? ""));
+  const note = String(form.get("observacao") ?? "").trim().slice(0, 500) || null;
+
+  if (!tipo) return erro("Escolha o tipo de produto.");
+  if (brand.length < 2) return erro("Informe a marca.");
+  if (model.length < 1) return erro("Informe o modelo.");
+  if (!eanValido(ean)) return erro("Código de barras inválido. Confira os números embaixo das barras (8, 12, 13 ou 14 números).");
+
+  const existente = await db.catalogItem.findUnique({ where: { ean }, select: { brand: true, model: true } });
+  if (existente) return erro(`Este código de barras já está no catálogo: ${existente.brand} ${existente.model}. Cadastre o produto normalmente.`);
+  const repetida = await db.materialSuggestion.findFirst({ where: { ean, status: "PENDENTE" } });
+  if (repetida) return erro("Este produto já foi sugerido e está em análise.");
+
+  await db.materialSuggestion.create({
+    data: {
+      storeId,
+      kind: "PRODUTO_MARCA",
+      name: `${brand} ${model}`,
+      category: tipo.category,
+      baseUnit: tipo.baseUnit,
+      typeProductId: tipo.id,
+      brand,
+      model,
+      ean,
+      note,
+    },
+  });
   refresh();
   return { ok: true, resposta: Date.now() };
 }

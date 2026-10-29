@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const ofertas = await db.offer.findMany({
     where: { storeId: loja.id },
-    include: { product: { select: { name: true, baseUnit: true } }, tiers: true },
+    include: { product: { select: { name: true, baseUnit: true } }, tiers: true, catalogItem: { select: { ean: true, brand: true, model: true } } },
     orderBy: [{ product: { category: "asc" } }, { product: { name: "asc" } }, { packageLabel: "asc" }],
   });
   const formato = new URL(request.url).searchParams.get("formato") === "csv" ? "csv" : "xlsx";
@@ -25,8 +25,15 @@ export async function GET(request: Request) {
   if (formato === "csv") {
     return new Response(gerarModeloCsv(ofertas), { headers: cabecalhos("text/csv; charset=utf-8", "csv") });
   }
-  const materiais = await db.product.findMany({ orderBy: [{ category: "asc" }, { name: "asc" }] });
-  const arquivo = await gerarModeloXlsx(ofertas, materiais);
+  const [materiais, itens] = await Promise.all([
+    db.product.findMany({ orderBy: [{ category: "asc" }, { name: "asc" }] }),
+    db.catalogItem.findMany({
+      where: { active: true },
+      include: { product: { select: { name: true } } },
+      orderBy: [{ productId: "asc" }, { brand: "asc" }, { model: "asc" }],
+    }),
+  ]);
+  const arquivo = await gerarModeloXlsx(ofertas, materiais, itens);
   return new Response(new Uint8Array(arquivo), {
     headers: cabecalhos("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
   });

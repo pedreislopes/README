@@ -18,7 +18,7 @@ test.describe("Importação de produtos por planilha", () => {
     const resposta = await page.request.get("/loja/importar/modelo?formato=xlsx");
     expect(resposta.status()).toBe(200);
     const abas = await readXlsxFile(Buffer.from(await resposta.body()));
-    expect(abas.map((a) => a.sheet)).toEqual(["Produtos", "Instrucoes", "Materiais"]);
+    expect(abas.map((a) => a.sheet)).toEqual(["Produtos", "Instrucoes", "Materiais", "Produtos de marca"]);
     const [cabecalho, ...linhas] = abas[0].data;
     const col = (nome: string) => cabecalho.indexOf(nome);
     const totalDaLoja = await db.offer.count({ where: { storeId: "taguatinga" } });

@@ -72,6 +72,17 @@ describe("montarResultados", () => {
     expect(r.grupos[0].ofertas.map((o) => o.id)).toEqual(["c50-valparaiso"]);
   });
 
+  it("filtra por marca (o Melhor preço passa a ser o da marca escolhida)", () => {
+    const comMarca = [
+      { ...oferta("alfa-1", "cimento", 3900, 50), brand: "Alfa" },
+      { ...oferta("beta-1", "cimento", 3800, 50), brand: "Beta" },
+      { ...oferta("alfa-2", "cimento", 4100, 50), brand: "Alfa" },
+    ];
+    const r = montarResultados([cimento], comMarca, { ordem: "unidade", marca: "Alfa" });
+    expect(r.grupos[0].ofertas.map((o) => o.id)).toEqual(["alfa-1", "alfa-2"]);
+    expect(r.grupos[0].melhorPrecoId).toBe("alfa-1");
+  });
+
   it("aplica a faixa de preço e remove produtos sem ofertas", () => {
     const r = montarResultados([cimento, areia], ofertas, {
       ordem: "preco",

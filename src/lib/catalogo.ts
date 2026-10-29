@@ -12,11 +12,21 @@ export async function carregarCatalogo() {
     include: {
       store: { select: { id: true, name: true, region: true, adPlan: true } },
       tiers: { orderBy: { minQuantity: "asc" } },
+      catalogItem: { select: { model: true, photoId: true } },
     },
   });
   const produtos = await db.product.findMany({
     where: { id: { in: [...new Set(ofertas.map((o) => o.productId))] } },
     orderBy: { name: "asc" },
+    include: { catalogItems: { where: { active: true }, select: { brand: true, model: true, ean: true } } },
   });
-  return { ofertas, produtos };
+  // Marca, modelo e código de barras dos produtos de marca também são encontrados na busca
+  // (ex.: buscar "Forja Cerrado" ou o código de barras traz o martelo)
+  return {
+    ofertas,
+    produtos: produtos.map(({ catalogItems, ...p }) => ({
+      ...p,
+      keywords: [p.keywords, ...catalogItems.map((i) => `${i.brand} ${i.model} ${i.ean ?? ""}`)].join(" "),
+    })),
+  };
 }

@@ -2,6 +2,8 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { Alerta, estiloCampo } from "@/components/Formulario";
+import Link from "next/link";
+import { MODELOS_CARACTERISTICAS } from "@/config/caracteristicas";
 import { CATEGORIAS, UNIDADES_BASE } from "@/config/constantes";
 import { aprovarSugestao, criarMaterial, recusarSugestao } from "@/lib/acoes-admin";
 
@@ -33,11 +35,18 @@ function CamposMaterial({ v }: { v: (campo: string, padrao?: string) => string }
         aria-label="Palavras para a busca"
         className={estiloCampo}
       />
-      <label className="flex items-start gap-2 text-sm text-slate-700">
-        <input type="checkbox" name="compararMarca" defaultChecked={v("compararMarca") === "on"} className="mt-0.5 h-5 w-5 accent-marca-600" />
-        <span>
-          <strong>Ferramenta de marca</strong> (martelo, trena…): a marca aparece em destaque e o lojista é obrigado a
-          informá-la.
+      <label className="block text-sm text-slate-700">
+        <span className="font-semibold">Tipo de material</span>
+        <select name="caracteristicas" defaultValue={v("caracteristicas")} aria-label="Tipo de material" className={estiloCampo}>
+          <option value="">Padronizado (cimento, areia…): compara só o preço</option>
+          {Object.entries(MODELOS_CARACTERISTICAS).map(([chave, m]) => (
+            <option key={chave} value={chave}>
+              Produto de marca — características de {m.nome.toLowerCase()}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-slate-500">
+          Produto de marca: as lojas escolhem os produtos do catálogo de marca (aba Marcas).
         </span>
       </label>
     </>
@@ -127,6 +136,63 @@ export function RevisarSugestao({ sugestao: s }: { sugestao: Sugestao }) {
               Confirmar recusa
             </button>
           </div>
+        </div>
+      )}
+      {erro && <p className="text-sm font-medium text-red-600">{erro}</p>}
+    </div>
+  );
+}
+
+/** Sugestão de PRODUTO DE MARCA: o administrador completa no catálogo de marca e aprova */
+export function SugestaoDeMarca({
+  sugestao: s,
+}: {
+  sugestao: { id: string; nome: string; ean: string | null; observacao: string | null; loja: string; tipo: string };
+}) {
+  const [enviando, iniciar] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+  const [recusando, setRecusando] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  return (
+    <div className="space-y-2 rounded-2xl border border-violet-300 bg-white p-4">
+      <p className="text-xs font-semibold text-violet-800 uppercase">Produto de marca</p>
+      <p className="font-bold">{s.nome}</p>
+      <p className="text-sm text-slate-600">
+        {s.tipo} · código de barras {s.ean ?? "—"} · sugerido por <strong>{s.loja}</strong>
+        {s.observacao ? ` — “${s.observacao}”` : ""}
+      </p>
+      {recusando ? (
+        <div className="space-y-2">
+          <textarea
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            rows={2}
+            placeholder="Motivo (o lojista verá este texto)"
+            aria-label="Motivo da recusa"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base"
+          />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setRecusando(false)} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold">
+              Voltar
+            </button>
+            <button
+              type="button"
+              disabled={enviando}
+              onClick={() => iniciar(async () => setErro((await recusarSugestao(s.id, motivo)).erro ?? null))}
+              className="flex-1 rounded-lg bg-red-700 py-2.5 font-bold text-white disabled:opacity-60"
+            >
+              Confirmar recusa
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Link href={`/admin/catalogo/novo?sugestao=${s.id}`} className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-center font-bold text-white">
+            Completar e aprovar
+          </Link>
+          <button type="button" onClick={() => setRecusando(true)} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold">
+            Recusar
+          </button>
         </div>
       )}
       {erro && <p className="text-sm font-medium text-red-600">{erro}</p>}

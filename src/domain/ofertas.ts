@@ -14,12 +14,13 @@ export type DadosOferta = {
   quantityStep: number;
   tiers: FaixaPreco[];
   brand?: string | null;
-  /** Ferramenta de marca: a marca é obrigatória */
-  exigeMarca?: boolean;
+  /** Produto de marca: é obrigatório escolher o item do catálogo central */
+  exigeItemDeMarca?: boolean;
+  catalogItemId?: string | null;
 };
 
 export type ErrosOferta = Partial<
-  Record<"productId" | "packageLabel" | "baseQuantity" | "priceCents" | "quantityStep" | "tiers" | "brand", string>
+  Record<"productId" | "packageLabel" | "baseQuantity" | "priceCents" | "quantityStep" | "tiers" | "catalogItemId", string>
 >;
 
 /** Confere o cadastro de um produto da loja antes de gravar */
@@ -30,8 +31,8 @@ export function validarOferta(d: DadosOferta): ErrosOferta {
   if (!(d.baseQuantity > 0)) erros.baseQuantity = "Informe quanto vem na embalagem.";
   if (!(d.priceCents > 0)) erros.priceCents = "Informe o preço.";
   if (d.quantityStep !== 1 && d.quantityStep !== 0.5) erros.quantityStep = "Escolha 1 ou 0,5.";
-  if (d.exigeMarca && !d.brand?.trim()) {
-    erros.brand = "Informe a marca: neste material o cliente compara preço e marca.";
+  if (d.exigeItemDeMarca && !d.catalogItemId) {
+    erros.catalogItemId = "Escolha o produto (marca e modelo) na lista ou informe o código de barras.";
   }
 
   // Faixas: quantidade mínima maior que 1, sem repetir, e preço caindo conforme a quantidade sobe

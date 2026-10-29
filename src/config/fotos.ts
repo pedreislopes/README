@@ -26,3 +26,6 @@ export const FOTO_MAX_PIXELS = 50_000_000;
 
 /** Exemplos de origem e autorização (o administrador escolhe ou escreve outra) */
 export const ORIGENS_FOTO = ["Kit oficial do fabricante", "Foto própria da loja", "Foto própria do Solid", "Ilustração de teste"];
+
+/** Endereço da foto: grande ou miniatura */
+export const urlDaFoto = (id: string, mini = false) => `/fotos/${id}${mini ? "?t=mini" : ""}`;

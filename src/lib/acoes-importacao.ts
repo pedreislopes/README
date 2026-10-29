@@ -9,7 +9,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  chaveDoProduto,
+  chaveDaOferta,
   mudancasEntre,
   planejarImportacao,
   type LinhaValida,
@@ -37,8 +37,15 @@ async function ofertasDaLoja(storeId: string) {
     quantityStep: o.quantityStep,
     tiersForCpf: o.tiersForCpf,
     tiers: o.tiers.map((t) => ({ minQuantity: t.minQuantity, priceCents: t.priceCents })),
+    catalogItemId: o.catalogItemId,
   }));
 }
+
+/** Itens do catálogo de marca (para achar o produto pelo código de barras) */
+const itensDeMarca = () =>
+  db.catalogItem.findMany({
+    select: { id: true, productId: true, brand: true, model: true, ean: true, packageLabel: true, baseQuantity: true, active: true },
+  });
 
 /** 1ª etapa: lê a planilha, compara e guarda a prévia (sem alterar nenhum produto) */
 export async function previaImportacao(_anterior: EstadoImportacao, form: FormData): Promise<EstadoImportacao> {
@@ -50,7 +57,7 @@ export async function previaImportacao(_anterior: EstadoImportacao, form: FormDa
   if ("erro" in lido) return { erro: lido.erro, resposta: Date.now() };
 
   const catalogo = await db.product.findMany({ select: { id: true, name: true, brandMatters: true } });
-  const plano = planejarImportacao(lido.tabela, catalogo, await ofertasDaLoja(loja.id));
+  const plano = planejarImportacao(lido.tabela, catalogo, await ofertasDaLoja(loja.id), await itensDeMarca());
   if (plano.erroGeral) return { erro: plano.erroGeral, resposta: Date.now() };
 
   const importacao = await db.$transaction(async (tx) => {
@@ -83,16 +90,18 @@ export async function confirmarImportacao(id: string): Promise<EstadoImportacao>
 
   const linhas = (JSON.parse(importacao.rows) as ResultadoLinha[]).filter((l) => l.dados);
   const catalogo = new Set((await db.product.findMany({ select: { id: true } })).map((p) => p.id));
-  const atuais = new Map((await ofertasDaLoja(loja.id)).map((o) => [chaveDoProduto(o.productId, o.packageLabel), o]));
+  const itensAtivos = new Map((await itensDeMarca()).filter((i) => i.active).map((i) => [i.id, i]));
+  const atuais = new Map((await ofertasDaLoja(loja.id)).map((o) => [chaveDaOferta(o), o]));
 
   const resumo: ResumoImportacao = { precosAlterados: 0, novos: 0, outrosAlterados: 0, semMudanca: 0, erros: 0 };
   const gravar: { dados: LinhaValida; offerId?: string }[] = [];
   for (const { dados } of linhas) {
-    if (!dados || !catalogo.has(dados.productId)) {
+    // O produto pode ter saído do catálogo entre a prévia e a confirmação
+    if (!dados || !catalogo.has(dados.productId) || (dados.catalogItemId && !itensAtivos.has(dados.catalogItemId))) {
       resumo.erros++;
       continue;
     }
-    const atual = atuais.get(chaveDoProduto(dados.productId, dados.packageLabel));
+    const atual = atuais.get(chaveDaOferta(dados));
     if (!atual) {
       resumo.novos++;
       gravar.push({ dados });
@@ -132,7 +141,9 @@ export async function confirmarImportacao(id: string): Promise<EstadoImportacao>
             // storeId no filtro: só altera produto desta loja
             await tx.offer.update({ where: { id: offerId, storeId: loja.id }, data: { ...campos, tiers: { create: dados.tiers } } });
           } else {
-            await tx.offer.create({ data: { ...campos, storeId: loja.id, productId: dados.productId, tiers: { create: dados.tiers } } });
+            await tx.offer.create({
+              data: { ...campos, storeId: loja.id, productId: dados.productId, catalogItemId: dados.catalogItemId, tiers: { create: dados.tiers } },
+            });
           }
         }
       },

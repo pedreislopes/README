@@ -179,7 +179,10 @@ export function validarEscolha(itens: { productId: string }[]): string | null {
 }
 
 /** Linhas da tabela: uma por característica do modelo; vazio vira "Não informado" */
-export function linhasDaComparacao(modelo: ModeloCaracteristicas | null, itens: ItemParaComparar[]): LinhaComparacao[] {
+export function linhasDaComparacao(
+  modelo: ModeloCaracteristicas | null,
+  itens: Pick<ItemParaComparar, "caracteristicas">[],
+): LinhaComparacao[] {
   return (modelo?.campos ?? []).map((campo) => ({
     rotulo: campo.rotulo,
     valores: itens.map((i) => formatarCaracteristica(campo, i.caracteristicas[campo.chave])),

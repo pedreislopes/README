@@ -13,6 +13,7 @@
 // Cada produto da loja é identificado pelo CÓDIGO do material + EMBALAGEM.
 // =============================================================================
 
+import { eanValido, normalizarEan } from "./marcas";
 import { validarOferta, type DadosOferta } from "./ofertas";
 import { reaisParaCentavos } from "@/lib/dinheiro";
 
@@ -26,12 +27,13 @@ export const FAIXAS_NA_PLANILHA = 3;
 /** Colunas do modelo, na ordem. "obrigatoria" = a coluna precisa existir no cabeçalho. */
 export const COLUNAS = [
   { chave: "codigo", titulo: "codigo", obrigatoria: true, ajuda: "Código do material no catálogo Solid (veja a aba Materiais). Não altere." },
+  { chave: "ean", titulo: "codigo_barras", obrigatoria: false, ajuda: "Produtos de marca: o código de barras (EAN) identifica o produto sozinho — marca, modelo e embalagem vêm do catálogo Solid (aba Produtos de marca)." },
   { chave: "material", titulo: "material", obrigatoria: false, ajuda: "Nome do material (só para você se orientar; não é lido)." },
   { chave: "embalagem", titulo: "embalagem", obrigatoria: true, ajuda: "Como é vendido. Ex.: Saco 50 kg, m³, Milheiro, Unidade." },
   { chave: "quantidade", titulo: "qtd_na_embalagem", obrigatoria: true, ajuda: "Quanto vem em 1 embalagem, na unidade de comparação. Ex.: saco de 50 kg = 50; milheiro = 1000." },
   { chave: "unidade", titulo: "unidade", obrigatoria: false, ajuda: "Unidade de comparação do material (kg, m³, unidade…). Só para orientação; não é lida." },
   { chave: "preco", titulo: "preco", obrigatoria: true, ajuda: "Preço de 1 embalagem, em reais. Ex.: 38,90" },
-  { chave: "marca", titulo: "marca", obrigatoria: false, ajuda: "Marca. Obrigatória nas ferramentas de marca (martelo, trena…)." },
+  { chave: "marca", titulo: "marca", obrigatoria: false, ajuda: "Marca (opcional). Nos produtos de marca é ignorada: vem do catálogo pelo código de barras." },
   { chave: "disponivel", titulo: "disponivel", obrigatoria: false, ajuda: "sim = aparece na busca; não = sem estoque. Vazio = sim." },
   { chave: "fracao", titulo: "fracao_minima", obrigatoria: false, ajuda: "1 = só inteiros; 0,5 = vende de meio em meio (areia, brita). Vazio = 1." },
   { chave: "atacadoCpf", titulo: "atacado_para_cpf", obrigatoria: false, ajuda: "sim = faixas de atacado valem também para pessoa física. Vazio = não (só CNPJ)." },
@@ -55,10 +57,22 @@ export type LinhaValida = {
   quantityStep: number;
   tiersForCpf: boolean;
   tiers: { minQuantity: number; priceCents: number }[];
+  /** Produto de marca: item do catálogo central */
+  catalogItemId: string | null;
 };
 
-export type OfertaAtual = Omit<LinhaValida, "linha"> & { id: string };
+export type OfertaAtual = Omit<LinhaValida, "linha" | "catalogItemId"> & { id: string; catalogItemId?: string | null };
 export type MaterialDoCatalogo = { id: string; name: string; brandMatters: boolean };
+export type ItemDeMarcaDoCatalogo = {
+  id: string;
+  productId: string;
+  brand: string;
+  model: string;
+  ean: string | null;
+  packageLabel: string;
+  baseQuantity: number;
+  active: boolean;
+};
 
 export type TipoLinha = "NOVO" | "PRECO" | "OUTROS" | "SEM_MUDANCA" | "ERRO";
 
@@ -158,6 +172,7 @@ export function planejarImportacao(
   tabela: Celula[][],
   catalogo: MaterialDoCatalogo[],
   ofertasAtuais: OfertaAtual[],
+  itensDeMarca: ItemDeMarcaDoCatalogo[] = [],
 ): PlanoImportacao {
   const vazio: ResumoImportacao = { precosAlterados: 0, novos: 0, outrosAlterados: 0, semMudanca: 0, erros: 0 };
   const [cabecalho, ...corpo] = tabela;
@@ -169,7 +184,11 @@ export function planejarImportacao(
     const col = COLUNAS.find((x) => x.titulo === normalizarTitulo(texto(c)));
     if (col && !posicao.has(col.chave)) posicao.set(col.chave, i);
   });
-  const faltando = COLUNAS.filter((c) => c.obrigatoria && !posicao.has(c.chave)).map((c) => c.titulo);
+  // Com a coluna do código de barras, basta ela e o preço (produtos de marca);
+  // sem ela, o material é identificado por código + embalagem + quantidade.
+  const faltando = COLUNAS.filter(
+    (c) => c.obrigatoria && !posicao.has(c.chave) && (c.chave === "preco" || !posicao.has("ean")),
+  ).map((c) => c.titulo);
   if (faltando.length) {
     return {
       erroGeral: `Faltam colunas na 1ª linha da planilha: ${faltando.join(", ")}. Use o modelo baixado nesta página.`,
@@ -187,7 +206,8 @@ export function planejarImportacao(
   }
 
   const materiais = new Map(catalogo.map((m) => [m.id, m]));
-  const atuais = new Map(ofertasAtuais.map((o) => [chaveProduto(o.productId, o.packageLabel), o]));
+  const atuais = new Map(ofertasAtuais.map((o) => [chaveDaOferta(o), o]));
+  const porEan = new Map(itensDeMarca.filter((i) => i.ean).map((i) => [i.ean!, i]));
   const vistas = new Map<string, number>();
   const resultado: ResultadoLinha[] = [];
 
@@ -197,15 +217,37 @@ export function planejarImportacao(
       return i === undefined ? null : celulas[i];
     };
     const erros: string[] = [];
-    const codigo = texto(valor("codigo"));
-    const embalagem = texto(valor("embalagem")).replace(/\s+/g, " ");
+    let codigo = texto(valor("codigo"));
+    let embalagem = texto(valor("embalagem")).replace(/\s+/g, " ");
+    let baseQuantity = lerNumero(valor("quantidade"));
+    let marca = texto(valor("marca")) || null;
+
+    // Produto de marca: o código de barras identifica tudo (marca, modelo, embalagem)
+    const ean = normalizarEan(texto(valor("ean")));
+    const item = ean ? porEan.get(ean) : undefined;
+    if (ean && !eanValido(ean)) {
+      erros.push(`Código de barras "${texto(valor("ean"))}" inválido: confira os números.`);
+    } else if (ean && !item) {
+      erros.push(`O código de barras ${ean} ainda não está no catálogo Solid. Use "Sugerir material" (marca, modelo e código de barras).`);
+    } else if (item) {
+      if (!item.active) erros.push(`O produto ${item.brand} ${item.model} está fora do catálogo.`);
+      if (codigo && codigo !== item.productId) erros.push(`O código de barras é de "${item.productId}", mas a coluna codigo diz "${codigo}".`);
+      codigo = item.productId;
+      embalagem = item.packageLabel;
+      baseQuantity = item.baseQuantity;
+      marca = item.brand;
+    }
+
     const material = materiais.get(codigo);
-    const base = { linha, codigo, nome: material?.name ?? texto(valor("material")), embalagem, mudancas: [] as string[] };
+    const nome = material ? (item ? `${material.name} — ${item.brand} ${item.model}` : material.name) : texto(valor("material"));
+    const base = { linha, codigo, nome, embalagem, mudancas: [] as string[] };
 
-    if (!codigo) erros.push("Falta o código do material.");
-    else if (!material) erros.push(`O código "${codigo}" não existe no catálogo. Confira na aba Materiais ou sugira o material.`);
+    if (!codigo && !ean) erros.push("Falta o código do material (ou o código de barras).");
+    else if (codigo && !material) erros.push(`O código "${codigo}" não existe no catálogo. Confira na aba Materiais ou sugira o material.`);
+    else if (material?.brandMatters && !item && !ean) {
+      erros.push("Produto de marca: informe o código de barras (coluna codigo_barras). Veja a aba Produtos de marca.");
+    }
 
-    const baseQuantity = lerNumero(valor("quantidade"));
     const priceCents = lerPreco(valor("preco"));
     if (texto(valor("preco")) && priceCents === null) erros.push(`Preço "${texto(valor("preco"))}" inválido. Use, por exemplo, 38,90.`);
     const active = lerSimNao(valor("disponivel"), true);
@@ -229,7 +271,6 @@ export function planejarImportacao(
     }
     tiers.sort((a, b) => a.minQuantity - b.minQuantity);
 
-    const marca = texto(valor("marca")) || null;
     const dadosOferta: DadosOferta = {
       productId: material?.id ?? "x", // código já conferido acima
       packageLabel: embalagem,
@@ -238,15 +279,14 @@ export function planejarImportacao(
       quantityStep: quantityStep ?? 0,
       tiers,
       brand: marca,
-      exigeMarca: material?.brandMatters,
     };
     erros.push(...Object.values(validarOferta(dadosOferta)).filter((e): e is string => !!e));
 
-    // A mesma embalagem do mesmo material duas vezes na planilha
-    const chave = chaveProduto(codigo, embalagem);
+    // O mesmo produto duas vezes na planilha
+    const chave = chaveDaOferta({ productId: codigo, packageLabel: embalagem, catalogItemId: item?.id });
     if (codigo && embalagem) {
       const anterior = vistas.get(chave);
-      if (anterior) erros.push(`Repetido: este material com esta embalagem já está na linha ${anterior}.`);
+      if (anterior) erros.push(`Repetido: este ${item ? "produto" : "material com esta embalagem"} já está na linha ${anterior}.`);
       else vistas.set(chave, linha);
     }
 
@@ -266,6 +306,7 @@ export function planejarImportacao(
       quantityStep: quantityStep!,
       tiersForCpf: tiersForCpf!,
       tiers,
+      catalogItemId: item?.id ?? null,
     };
     const atual = atuais.get(chave);
     if (!atual) {
@@ -293,7 +334,10 @@ export function planejarImportacao(
 }
 
 /** O que muda entre o produto cadastrado e a linha da planilha (vazio = nada) */
-export function mudancasEntre(atual: Omit<LinhaValida, "linha">, dados: Omit<LinhaValida, "linha">): string[] {
+export function mudancasEntre(
+  atual: Omit<LinhaValida, "linha" | "catalogItemId">,
+  dados: Omit<LinhaValida, "linha" | "catalogItemId">,
+): string[] {
   const mudancas: string[] = [];
   if (atual.priceCents !== dados.priceCents) mudancas.push(`Preço: ${reais(atual.priceCents)} → ${reais(dados.priceCents)}`);
   if (atual.packageLabel !== dados.packageLabel) mudancas.push(`Embalagem: ${atual.packageLabel} → ${dados.packageLabel}`);
@@ -309,8 +353,13 @@ export function mudancasEntre(atual: Omit<LinhaValida, "linha">, dados: Omit<Lin
   return mudancas;
 }
 
-/** Chave que identifica um produto da loja: código do material + embalagem */
-export const chaveDoProduto = chaveProduto;
+/**
+ * Chave que identifica um produto da loja: o item do catálogo de marca (produtos
+ * de marca) ou o código do material + a embalagem (materiais padronizados).
+ */
+export function chaveDaOferta(o: { productId: string; packageLabel: string; catalogItemId?: string | null }) {
+  return o.catalogItemId ? `item:${o.catalogItemId}` : chaveProduto(o.productId, o.packageLabel);
+}
 
 /** "12 preços alterados, 3 produtos novos, 2 erros" */
 export function textoDoResumo(r: ResumoImportacao): string {

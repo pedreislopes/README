@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  chaveDaOferta,
   COLUNAS,
   decodificarCsv,
   lerCsv,
   planejarImportacao,
   textoDoResumo,
   type Celula,
+  type ItemDeMarcaDoCatalogo,
   type MaterialDoCatalogo,
   type OfertaAtual,
 } from "./importacao";
@@ -14,6 +16,14 @@ const catalogo: MaterialDoCatalogo[] = [
   { id: "cimento-cp2", name: "Cimento CP II-E 32", brandMatters: false },
   { id: "areia-media", name: "Areia média lavada", brandMatters: false },
   { id: "martelo-unha", name: "Martelo de unha 27 mm", brandMatters: true },
+];
+
+// Item do catálogo de marca (código de barras fictício e válido)
+const EAN_MARTELO = "2000000000015";
+const EAN_MARTELO_2 = "2000000000022";
+const itensDeMarca: ItemDeMarcaDoCatalogo[] = [
+  { id: "item-a", productId: "martelo-unha", brand: "Forja Cerrado", model: "MU-27", ean: EAN_MARTELO, packageLabel: "Unidade", baseQuantity: 1, active: true },
+  { id: "item-b", productId: "martelo-unha", brand: "Aço Candango", model: "Pro 27", ean: EAN_MARTELO_2, packageLabel: "Unidade", baseQuantity: 1, active: true },
 ];
 
 const atuais: OfertaAtual[] = [
@@ -56,11 +66,12 @@ describe("planejarImportacao", () => {
         cabecalho,
         linha({ ...cimento, preco: "39,90" }), // linha 2: preço
         linha({ codigo: "areia-media", embalagem: "m³", qtd_na_embalagem: 1, preco: 140, fracao_minima: "0,5" }), // 3: igual
-        linha({ codigo: "martelo-unha", embalagem: "Unidade", qtd_na_embalagem: 1, preco: "49,90", marca: "Vonder" }), // 4: novo
+        linha({ codigo_barras: EAN_MARTELO, preco: "49,90" }), // 4: novo (produto de marca pelo código de barras)
         linha({ codigo: "telha-xyz", embalagem: "Unidade", qtd_na_embalagem: 1, preco: "1" }), // 5: erro
       ],
       catalogo,
       atuais,
+      itensDeMarca,
     );
     expect(plano.erroGeral).toBeUndefined();
     expect(plano.linhas.map((l) => [l.linha, l.tipo])).toEqual([
@@ -96,7 +107,7 @@ describe("planejarImportacao", () => {
         cabecalho,
         linha({ ...cimento }),
         linha({ ...cimento, preco: "abc" }), // repetido + preço inválido
-        linha({ codigo: "martelo-unha", embalagem: "Unidade", qtd_na_embalagem: 1, preco: "49,90" }), // sem marca
+        linha({ codigo: "martelo-unha", embalagem: "Unidade", qtd_na_embalagem: 1, preco: "49,90" }), // produto de marca sem código de barras
         linha({ ...cimento, embalagem: "Saco 25 kg", qtd_na_embalagem: 25, preco: "21", faixa1_a_partir_de: 10, faixa1_preco: "" }),
         linha({ ...cimento, embalagem: "Saco 40 kg", qtd_na_embalagem: 40, preco: "32", faixa1_preco: "33" }),
         linha({ codigo: "areia-media", embalagem: "m³ (meio)", qtd_na_embalagem: 1, preco: 70, disponivel: "talvez" }),
@@ -107,7 +118,7 @@ describe("planejarImportacao", () => {
     const erro = (n: number) => plano.linhas.find((l) => l.linha === n)!.erros.join(" | ");
     expect(erro(3)).toMatch(/Preço "abc" inválido/);
     expect(erro(3)).toMatch(/Repetido: .* linha 2/);
-    expect(erro(4)).toMatch(/Informe a marca/);
+    expect(erro(4)).toMatch(/Produto de marca: informe o código de barras/);
     expect(erro(5)).toMatch(/Faixa 1 de atacado incompleta/);
     expect(erro(6)).toMatch(/preço de cada faixa deve ser menor/);
     expect(erro(7)).toMatch(/use sim ou não/);
@@ -144,6 +155,55 @@ describe("planejarImportacao", () => {
     expect(planejarImportacao([["codigo", "embalagem"]], catalogo, atuais).erroGeral).toMatch(/Faltam colunas.*qtd_na_embalagem, preco/);
     expect(planejarImportacao([], catalogo, atuais).erroGeral).toMatch(/vazia/);
     expect(planejarImportacao([cabecalho], catalogo, atuais).erroGeral).toMatch(/nenhum produto/);
+  });
+});
+
+describe("produtos de marca pelo código de barras", () => {
+  const martelo: OfertaAtual = {
+    id: "of-martelo", productId: "martelo-unha", packageLabel: "Unidade", baseQuantity: 1, priceCents: 4990,
+    brand: "Forja Cerrado", active: true, quantityStep: 1, tiersForCpf: false, tiers: [], catalogItemId: "item-a",
+  };
+
+  it("basta o código de barras e o preço: marca, modelo e embalagem vêm do catálogo", () => {
+    const plano = planejarImportacao(
+      [["codigo_barras", "preco"], [EAN_MARTELO, "52,90"], [EAN_MARTELO_2, "59,90"]],
+      catalogo,
+      [martelo],
+      itensDeMarca,
+    );
+    expect(plano.erroGeral).toBeUndefined();
+    expect(plano.linhas.map((l) => [l.tipo, l.nome])).toEqual([
+      ["PRECO", "Martelo de unha 27 mm — Forja Cerrado MU-27"],
+      ["NOVO", "Martelo de unha 27 mm — Aço Candango Pro 27"],
+    ]);
+    expect(plano.linhas[0].offerId).toBe("of-martelo");
+    expect(plano.linhas[1].dados).toMatchObject({ catalogItemId: "item-b", productId: "martelo-unha", packageLabel: "Unidade", brand: "Aço Candango" });
+  });
+
+  it("aceita o código com espaços; aponta código inválido, fora do catálogo ou do material errado", () => {
+    const plano = planejarImportacao(
+      [
+        ["codigo", "codigo_barras", "preco"],
+        ["", "2000 0000 0001 5", "50"],
+        ["", "2000000000016", "50"],
+        ["", "2000000000039", "50"],
+        ["cimento-cp2", EAN_MARTELO_2, "50"],
+      ],
+      catalogo,
+      [],
+      itensDeMarca,
+    );
+    const erro = (n: number) => plano.linhas.find((l) => l.linha === n)!.erros.join(" | ");
+    expect(plano.linhas.find((l) => l.linha === 2)!.tipo).toBe("NOVO");
+    expect(erro(3)).toMatch(/inválido: confira os números/);
+    expect(erro(4)).toMatch(/ainda não está no catálogo Solid. Use "Sugerir material"/);
+    expect(erro(5)).toMatch(/é de "martelo-unha", mas a coluna codigo diz "cimento-cp2"/);
+  });
+
+  it("dois modelos de marca com a mesma embalagem são produtos diferentes", () => {
+    expect(chaveDaOferta({ productId: "m", packageLabel: "Unidade", catalogItemId: "a" })).not.toBe(
+      chaveDaOferta({ productId: "m", packageLabel: "Unidade", catalogItemId: "b" }),
+    );
   });
 });
 

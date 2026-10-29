@@ -9,18 +9,23 @@ export const metadata = { title: "Meus produtos" };
 
 export default async function ProdutosLoja(props: PageProps<"/loja/produtos">) {
   const { loja } = await exigirLoja();
-  const { salvo, excluido } = await props.searchParams;
+  const { salvo, excluido, foto } = await props.searchParams;
   const ofertas = await db.offer.findMany({
     where: { storeId: loja.id },
-    include: { product: { select: { name: true, category: true } }, tiers: { orderBy: { minQuantity: "asc" } } },
+    include: {
+      product: { select: { name: true, category: true } },
+      tiers: { orderBy: { minQuantity: "asc" } },
+      catalogItem: { select: { model: true } },
+    },
     orderBy: [{ product: { category: "asc" } }, { product: { name: "asc" } }],
   });
 
   return (
     <div className="space-y-4">
-      {(salvo || excluido) && (
+      {(salvo || excluido || foto) && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 font-semibold text-emerald-800">
-          <CheckCircle2 className="h-5 w-5" /> {salvo ? "Produto salvo." : "Produto removido."}
+          <CheckCircle2 className="h-5 w-5" />{" "}
+          {salvo ? "Produto salvo." : foto ? "Foto enviada! Ela aparece no site depois da aprovação do Solid." : "Produto removido."}
         </p>
       )}
       <Link
@@ -46,7 +51,7 @@ export default async function ProdutosLoja(props: PageProps<"/loja/produtos">) {
         <ListaProdutosLoja
           produtos={ofertas.map((o) => ({
             id: o.id,
-            nome: o.product.name,
+            nome: o.catalogItem ? `${o.product.name} — ${o.catalogItem.model}` : o.product.name,
             categoria: o.product.category,
             embalagem: o.packageLabel,
             marca: o.brand,

@@ -5,9 +5,10 @@ import { exigirAdmin } from "@/lib/admin";
 
 export default async function LayoutAdmin({ children }: LayoutProps<"/admin">) {
   await exigirAdmin();
-  const [lojasPendentes, sugestoesPendentes] = await Promise.all([
+  const [lojasPendentes, sugestoesPendentes, fotosPendentes] = await Promise.all([
     db.store.count({ where: { status: "PENDENTE" } }),
     db.materialSuggestion.count({ where: { status: "PENDENTE" } }),
+    db.photoSubmission.count({ where: { status: "PENDENTE" } }),
   ]);
   return (
     <div className="space-y-4">
@@ -23,6 +24,7 @@ export default async function LayoutAdmin({ children }: LayoutProps<"/admin">) {
           { href: "/admin/lojas", rotulo: "Lojas", contador: lojasPendentes },
           { href: "/admin/pedidos", rotulo: "Pedidos" },
           { href: "/admin/materiais", rotulo: "Materiais", contador: sugestoesPendentes },
+          { href: "/admin/catalogo", rotulo: "Marcas", contador: fotosPendentes },
           { href: "/admin/registro", rotulo: "Registro" },
         ]}
       />

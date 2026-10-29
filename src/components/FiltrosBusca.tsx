@@ -14,13 +14,14 @@ export type ValoresFiltros = {
   min: string;
   max: string;
   ordem: string;
+  marca: string;
 };
 
 const campo =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base focus:border-marca-500 focus:ring-2 focus:ring-marca-100 focus:outline-none";
 
-export function FiltrosBusca({ valores }: { valores: ValoresFiltros }) {
-  const ativos = [valores.regiao, valores.categoria, valores.min, valores.max].filter(Boolean).length;
+export function FiltrosBusca({ valores, marcas = [] }: { valores: ValoresFiltros; marcas?: string[] }) {
+  const ativos = [valores.regiao, valores.categoria, valores.min, valores.max, valores.marca].filter(Boolean).length;
 
   return (
     <form action="/busca" className="space-y-3">
@@ -100,6 +101,18 @@ export function FiltrosBusca({ valores }: { valores: ValoresFiltros }) {
               ))}
             </select>
           </label>
+
+          {(marcas.length > 0 || valores.marca) && (
+            <label className="block text-sm font-medium sm:col-span-2">
+              Marca
+              <select name="marca" defaultValue={valores.marca} className={`${campo} mt-1`}>
+                <option value="">Todas as marcas</option>
+                {[...new Set([...marcas, valores.marca].filter(Boolean))].map((m) => (
+                  <option key={m}>{m}</option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <fieldset className="sm:col-span-2">
             <legend className="text-sm font-medium">Preço da embalagem (R$)</legend>

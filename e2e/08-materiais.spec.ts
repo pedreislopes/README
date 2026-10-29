@@ -38,13 +38,12 @@ test.describe("Explicação dos materiais e guias", () => {
 });
 
 test.describe("Ferragens, ferramentas e EPI", () => {
-  test("ferramenta de marca: marca em destaque em cada oferta", async ({ page }) => {
+  test("ferramenta de marca: marca e modelo em destaque em cada oferta", async ({ page }) => {
     await page.goto("/produto/martelo-unha");
-    await expect(principal(page).getByText(/compare o preço e a marca lado a lado/)).toBeVisible();
-    const ofertas = principal(page).locator("article");
+    const ofertas = principal(page).getByRole("region", { name: /Todas as ofertas/ }).locator("article");
     expect(await ofertas.count()).toBeGreaterThanOrEqual(4);
     for (const texto of await ofertas.allInnerTexts()) {
-      expect(texto).toMatch(/Tramontina|Vonder|Stanley|Irwin/);
+      expect(texto).toMatch(/Forja Cerrado|Aço Candango|Ferramentas Ipê|Planalto Tools/);
     }
     await semRolagemLateral(page);
   });
@@ -59,18 +58,14 @@ test.describe("Ferragens, ferramentas e EPI", () => {
     await expect(principal(page).getByText(/1[5-9] materiais encontrados/)).toBeVisible();
   });
 
-  test("lojista precisa informar a marca de uma ferramenta", async ({ page }) => {
+  test("lojista precisa escolher o produto de marca (marca e modelo)", async ({ page }) => {
     await entrar(page, "lojista@teste.com");
     await page.goto("/loja/produtos/novo");
-    await page.getByLabel("Material").selectOption("trena-5m");
-    await expect(page.getByText("(obrigatória)")).toBeVisible();
-    await page.getByLabel("Como é vendido").fill("Unidade com trava");
-    await page.getByLabel(/Quanto vem/).fill("1");
+    await page.getByLabel("Material", { exact: true }).selectOption("trena-5m");
+    await expect(page.getByLabel("Produto (marca e modelo)")).toBeVisible();
+    await expect(page.getByLabel("Marca", { exact: true })).toHaveCount(0); // a marca vem do catálogo
     await page.getByLabel("Preço (R$)").fill("31,90");
     await page.getByRole("button", { name: "Salvar produto" }).click();
-    await expect(page.getByText("Informe a marca: neste material o cliente compara preço e marca.")).toBeVisible();
-    await page.getByLabel(/Marca/).fill("Stanley");
-    await page.getByRole("button", { name: "Salvar produto" }).click();
-    await page.waitForURL(/salvo=1/);
+    await expect(page.getByText("Escolha o produto (marca e modelo) na lista ou informe o código de barras.")).toBeVisible();
   });
 });
