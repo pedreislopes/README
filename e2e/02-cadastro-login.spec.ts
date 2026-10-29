@@ -62,7 +62,7 @@ test.describe("Cadastro e login", () => {
     await page.getByLabel("E-mail").fill("novaloja@teste.com");
     await page.getByLabel("Telefone com DDD").fill("6133334444");
     await page.getByLabel("Nome da loja").fill("Depósito Novo");
-    await page.getByLabel("Região do DF").selectOption("Asa Sul");
+    await page.getByLabel("Região (DF ou Entorno)").selectOption("Lago Norte");
     await page.getByLabel("Endereço da loja").fill("SCLS 102 Bloco A");
     await page.getByLabel("Senha", { exact: true }).fill("obra2026");
     await page.getByLabel("Repita a senha").fill("obra2026");

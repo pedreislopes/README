@@ -21,7 +21,8 @@ export type OfertaDaBusca = OfertaPrecificavel & {
 };
 
 export type Filtros = {
-  regiao?: string;
+  /** Regiões aceitas (uma só, ou todas do DF / do Entorno). Vazio = todas. */
+  regioes?: readonly string[];
   /** Faixa de preço da embalagem, em centavos */
   precoMin?: number;
   precoMax?: number;
@@ -49,7 +50,7 @@ export type Resultados<P, O> = {
 const porUnidade = (o: OfertaPrecificavel) => precoPorUnidadeBase(o.priceCents, o.baseQuantity);
 
 function passaNosFiltros(oferta: OfertaDaBusca, filtros: Filtros): boolean {
-  if (filtros.regiao && oferta.store.region !== filtros.regiao) return false;
+  if (filtros.regioes?.length && !filtros.regioes.includes(oferta.store.region)) return false;
   if (filtros.precoMin !== undefined && oferta.priceCents < filtros.precoMin) return false;
   if (filtros.precoMax !== undefined && oferta.priceCents > filtros.precoMax) return false;
   return true;

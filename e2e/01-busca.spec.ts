@@ -37,8 +37,34 @@ test.describe("Busca e comparação", () => {
   });
 
   test("filtro de região sem lojas mostra aviso", async ({ page }) => {
-    await page.goto("/busca?q=tijolo+8+furo&regiao=Asa+Sul");
+    await page.goto("/busca?q=tijolo+8+furo&regiao=Fercal");
     await expect(page.getByText("Nenhuma loja com esses filtros.")).toBeVisible();
+    await expect(page.getByText("Ainda não temos lojas com esse material em Fercal.")).toBeVisible();
+  });
+
+  test("filtro de região separado em DF e Entorno, com as regiões oficiais", async ({ page }) => {
+    // Um material vendido pela loja do Entorno (Valparaíso de Goiás)
+    const oferta = await db.offer.findFirstOrThrow({ where: { storeId: "valparaiso" }, include: { product: true } });
+    const busca = `/busca?q=${encodeURIComponent(oferta.product.name)}`;
+    await page.goto(busca);
+    await principal(page).locator("summary", { hasText: "Filtros" }).click();
+    const regiao = principal(page).getByLabel("Região");
+    await expect(regiao.locator("optgroup[label='DF'] option", { hasText: "Lago Sul" })).toHaveCount(1);
+    await expect(regiao.locator("optgroup[label='DF'] option", { hasText: "Lago Norte" })).toHaveCount(1);
+    await expect(regiao.locator("optgroup[label='Entorno'] option", { hasText: "Valparaíso de Goiás" })).toHaveCount(1);
+
+    // "Todo o Entorno": só aparecem lojas de cidades do Entorno
+    await regiao.selectOption("Entorno");
+    await principal(page).getByRole("button", { name: "Aplicar filtros" }).click();
+    await expect(page).toHaveURL(/regiao=Entorno/);
+    const lojas = principal(page).locator("article");
+    await expect(lojas.first()).toContainText("Valparaíso Materiais de Construção");
+    for (const texto of await lojas.allInnerTexts()) expect(texto).toContain("Valparaíso de Goiás");
+
+    // "Todo o DF": a loja do Entorno some
+    await page.goto(`${busca}&regiao=DF`);
+    await expect(principal(page).locator("article").first()).toBeVisible();
+    await expect(principal(page).getByText("Valparaíso Materiais de Construção")).toHaveCount(0);
   });
 
   test("anúncios: Premium primeiro, Destaque nas vagas que sobram, com rodízio justo", async ({ page }) => {

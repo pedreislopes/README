@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronRight, SearchX } from "lucide-react";
 import { CartaoOferta } from "@/components/CartaoOferta";
 import { FiltrosBusca, type ValoresFiltros } from "@/components/FiltrosBusca";
-import { CATEGORIAS, REGIOES } from "@/config/constantes";
+import { CATEGORIAS, regioesDoFiltro } from "@/config/constantes";
 import { MATERIAIS_POPULARES } from "@/config/sinonimos";
 import { buscarProdutos } from "@/domain/busca";
 import { MAX_ANUNCIOS_NO_TOPO } from "@/config/anuncios";
@@ -26,7 +26,7 @@ export default async function Busca(props: PageProps<"/busca">) {
   const params = await props.searchParams;
   const valores: ValoresFiltros = {
     q: texto(params.q),
-    regiao: REGIOES.find((r) => r === texto(params.regiao)) ?? "",
+    regiao: regioesDoFiltro(texto(params.regiao)) ? texto(params.regiao) : "",
     categoria: CATEGORIAS.find((c) => c === texto(params.categoria)) ?? "",
     min: texto(params.min),
     max: texto(params.max),
@@ -34,6 +34,7 @@ export default async function Busca(props: PageProps<"/busca">) {
     ordem: texto(params.ordem) === "preco" ? "preco" : "unidade",
   };
 
+  const filtroRegiao = regioesDoFiltro(valores.regiao);
   const usuario = await usuarioAtual();
   const papel = usuario?.role ?? null;
   const nadaBuscado = !valores.q && !valores.categoria && !valores.regiao;
@@ -44,7 +45,7 @@ export default async function Busca(props: PageProps<"/busca">) {
 
   const { grupos, destaque } = montarResultados(naCategoria, ofertas, {
     ordem: valores.ordem as Ordem,
-    regiao: valores.regiao || undefined,
+    regioes: filtroRegiao?.regioes,
     precoMin: reaisParaCentavos(valores.min) ?? undefined,
     precoMax: reaisParaCentavos(valores.max) ?? undefined,
   });
@@ -98,8 +99,8 @@ export default async function Busca(props: PageProps<"/busca">) {
           <SearchX className="mx-auto h-8 w-8 text-slate-400" />
           <p className="mt-2 font-semibold">Nenhuma loja com esses filtros.</p>
           <p className="text-sm text-slate-600">
-            {valores.regiao
-              ? `Ainda não temos lojas com esse material em ${valores.regiao}. `
+            {filtroRegiao
+              ? `Ainda não temos lojas com esse material ${filtroRegiao.regioes.length > 1 ? `no ${valores.regiao}` : `em ${filtroRegiao.rotulo}`}. `
               : ""}
             Tente outra região ou outra faixa de preço.
           </p>

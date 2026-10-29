@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Briefcase, Store, User } from "lucide-react";
 import { Campo, estiloBotaoPrincipal, estiloCampo, MensagemErro } from "@/components/Formulario";
-import { REGIOES } from "@/config/constantes";
+import { REGIOES_EM_GRUPOS, rotuloRegiao } from "@/config/constantes";
 import { SENHA_MIN } from "@/config/seguranca";
 import { cadastrar } from "@/lib/acoes-conta";
 
@@ -104,12 +104,18 @@ export function FormularioCadastro({ voltar, tipoInicial }: { voltar: string; ti
           <Campo rotulo="Nome da loja" name="nomeLoja" defaultValue={v.nomeLoja} erro={e.nomeLoja} />
           <div>
             <label htmlFor="regiao" className="block text-sm font-semibold text-slate-800">
-              Região do DF
+              Região (DF ou Entorno)
             </label>
             <select id="regiao" name="regiao" defaultValue={v.regiao ?? ""} className={estiloCampo} aria-invalid={e.regiao ? true : undefined}>
               <option value="">Escolha…</option>
-              {REGIOES.map((r) => (
-                <option key={r}>{r}</option>
+              {REGIOES_EM_GRUPOS.map(({ grupo, regioes }) => (
+                <optgroup key={grupo.nome} label={grupo.nome}>
+                  {regioes.map((r) => (
+                    <option key={r} value={r}>
+                      {rotuloRegiao(r)}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             <MensagemErro erro={e.regiao} />

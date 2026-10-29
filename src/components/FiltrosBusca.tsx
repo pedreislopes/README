@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { Search, SlidersHorizontal } from "lucide-react";
-import { CATEGORIAS, REGIOES } from "@/config/constantes";
+import { CATEGORIAS, REGIOES_EM_GRUPOS, rotuloRegiao } from "@/config/constantes";
 import { SelectAutoEnvio } from "./SelectAutoEnvio";
 
 export type ValoresFiltros = {
@@ -75,11 +75,18 @@ export function FiltrosBusca({ valores }: { valores: ValoresFiltros }) {
 
         <div className="grid gap-3 border-t border-slate-100 p-4 sm:grid-cols-2">
           <label className="block text-sm font-medium">
-            Região do DF
+            Região
             <select name="regiao" defaultValue={valores.regiao} className={`${campo} mt-1`}>
-              <option value="">Todas as regiões</option>
-              {REGIOES.map((r) => (
-                <option key={r}>{r}</option>
+              <option value="">Todas as regiões (DF e Entorno)</option>
+              {REGIOES_EM_GRUPOS.map(({ grupo, regioes }) => (
+                <optgroup key={grupo.nome} label={grupo.nome}>
+                  <option value={grupo.nome}>{grupo.todas}</option>
+                  {regioes.map((r) => (
+                    <option key={r} value={r}>
+                      {rotuloRegiao(r)}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>

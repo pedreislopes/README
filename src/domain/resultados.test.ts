@@ -61,9 +61,15 @@ describe("montarResultados", () => {
   });
 
   it("NÃO mostra patrocinado se o filtro de região esconde a loja", () => {
-    const r = montarResultados([cimento], ofertas, { ordem: "preco", regiao: "Asa Norte" });
+    const r = montarResultados([cimento], ofertas, { ordem: "preco", regioes: ["Asa Norte"] });
     expect(r.destaque).toBeNull();
     expect(r.grupos[0].ofertas.map((o) => o.id)).toEqual(["c25"]);
+  });
+
+  it("filtra por grupo de regiões (ex.: todo o Entorno)", () => {
+    const comEntorno = [...ofertas, oferta("c50-valparaiso", "cimento", 3990, 50, { region: "Valparaíso de Goiás" })];
+    const r = montarResultados([cimento], comEntorno, { ordem: "unidade", regioes: ["Valparaíso de Goiás", "Luziânia"] });
+    expect(r.grupos[0].ofertas.map((o) => o.id)).toEqual(["c50-valparaiso"]);
   });
 
   it("aplica a faixa de preço e remove produtos sem ofertas", () => {

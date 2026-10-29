@@ -135,7 +135,7 @@ A senha de **todos** é **`solid123`**.
 | Administrador | `admin@teste.com` | Painel do administrador (aprovar lojas, comissões, relatórios) |
 
 As outras lojas também têm login (senha `solid123`): `ceilandia@`, `aguasclaras@`, `asanorte@`,
-`samambaia@`, `gama@`, `sobradinho@` e `guara@teste.com`.
+`samambaia@`, `gama@`, `sobradinho@`, `guara@`, `lagosul@` e `valparaiso@teste.com`.
 
 ### Lojas de teste
 
@@ -144,13 +144,18 @@ As outras lojas também têm login (senha `solid123`): `ceilandia@`, `aguasclara
 | Casa do Construtor Taguatinga | Taguatinga | 3% | Loja do `lojista@teste.com` |
 | Depósito Ceilândia Forte | Ceilândia | 0% | |
 | Materiais Águas Claras | Águas Claras | 5% | |
-| Asa Norte Materiais de Construção | Asa Norte | 3% | Vende cimento em saco de 25 kg e tijolo avulso |
+| Asa Norte Materiais de Construção | Plano Piloto | 3% | Vende cimento em saco de 25 kg e tijolo avulso |
 | Samambaia Depósito Popular | Samambaia | 0% | |
 | Gama Construções e Materiais | Gama | 5% | |
 | Sobradinho Casa & Obra | Sobradinho | 4% | Plano **Destaque** (anúncio "Patrocinado") |
 | Guará Material de Construção | Guará | 3% | Plano **Premium** (anúncio "Patrocinado", prioridade no topo) |
+| Lago Sul Acabamentos e Construção | Lago Sul | 4% | |
+| Valparaíso Materiais de Construção | Valparaíso de Goiás (Entorno) | 3% | Loja do Entorno, para testar o filtro "Todo o Entorno" |
 | Depósito Nova Era Vicente Pires | Vicente Pires | 5% | **Aguardando aprovação**: não aparece na busca |
 
+- Regiões: as **35 regiões administrativas oficiais do DF** e as principais cidades do **Entorno**,
+  separadas em "DF" e "Entorno" no filtro da busca (com as opções "Todo o DF" e "Todo o Entorno").
+  A lista fica em `src/config/constantes.ts`.
 - 44 materiais em 10 categorias, com diferença de 8% a 20% entre a loja mais barata e a mais cara.
   As lojas com anúncio (Destaque/Premium) nunca são as mais baratas, para os selos aparecerem juntos.
 - Faixas de atacado só para CNPJ, **exceto** em *Argamassa colante AC-I* e *Bloco de concreto

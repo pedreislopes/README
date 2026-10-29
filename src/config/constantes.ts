@@ -3,20 +3,103 @@
 // Para adicionar uma região ou categoria, basta incluir aqui.
 // =============================================================================
 
-/** Regiões administrativas do DF atendidas no MVP */
-export const REGIOES = [
-  "Asa Norte",
-  "Asa Sul",
-  "Taguatinga",
-  "Ceilândia",
-  "Águas Claras",
-  "Samambaia",
-  "Gama",
-  "Sobradinho",
-  "Guará",
-  "Vicente Pires",
+/**
+ * As 35 regiões administrativas oficiais do DF, na ordem oficial (I a XXXV).
+ * Fonte: GDF. São 35 desde dez/2022, com a criação de Arapoanga e Água Quente.
+ * Asa Norte, Asa Sul e Noroeste ficam dentro do "Plano Piloto" (RA I).
+ */
+export const REGIOES_DF = [
+  "Plano Piloto", // I
+  "Gama", // II
+  "Taguatinga", // III
+  "Brazlândia", // IV
+  "Sobradinho", // V
+  "Planaltina", // VI
+  "Paranoá", // VII
+  "Núcleo Bandeirante", // VIII
+  "Ceilândia", // IX
+  "Guará", // X
+  "Cruzeiro", // XI
+  "Samambaia", // XII
+  "Santa Maria", // XIII
+  "São Sebastião", // XIV
+  "Recanto das Emas", // XV
+  "Lago Sul", // XVI
+  "Riacho Fundo", // XVII
+  "Lago Norte", // XVIII
+  "Candangolândia", // XIX
+  "Águas Claras", // XX
+  "Riacho Fundo II", // XXI
+  "Sudoeste/Octogonal", // XXII
+  "Varjão", // XXIII
+  "Park Way", // XXIV
+  "SCIA/Estrutural", // XXV
+  "Sobradinho II", // XXVI
+  "Jardim Botânico", // XXVII
+  "Itapoã", // XXVIII
+  "SIA", // XXIX
+  "Vicente Pires", // XXX
+  "Fercal", // XXXI
+  "Sol Nascente/Pôr do Sol", // XXXII
+  "Arniqueira", // XXXIII
+  "Arapoanga", // XXXIV
+  "Água Quente", // XXXV
 ] as const;
+
+/** Principais cidades do Entorno (Goiás), atendidas por lojas da região */
+export const REGIOES_ENTORNO = [
+  "Águas Lindas de Goiás",
+  "Alexânia",
+  "Cidade Ocidental",
+  "Cocalzinho de Goiás",
+  "Cristalina",
+  "Formosa",
+  "Luziânia",
+  "Novo Gama",
+  "Padre Bernardo",
+  "Planaltina de Goiás",
+  "Santo Antônio do Descoberto",
+  "Valparaíso de Goiás",
+] as const;
+
+/** Todas as regiões aceitas no cadastro de lojas */
+export const REGIOES = [...REGIOES_DF, ...REGIOES_ENTORNO] as const;
 export type Regiao = (typeof REGIOES)[number];
+
+/** Opções "Todo o DF" e "Todo o Entorno" do filtro da busca */
+export const GRUPOS_REGIOES = {
+  DF: { nome: "DF", todas: "Todo o DF", regioes: REGIOES_DF },
+  Entorno: { nome: "Entorno", todas: "Todo o Entorno", regioes: REGIOES_ENTORNO },
+} as const;
+
+/** Bairros conhecidos que ajudam a achar a região certa na lista */
+export const DICA_REGIAO: Partial<Record<Regiao, string>> = {
+  "Plano Piloto": "Asa Norte, Asa Sul, Noroeste",
+  "Sudoeste/Octogonal": "Sudoeste, Octogonal",
+  "SCIA/Estrutural": "Cidade Estrutural",
+  SIA: "Setor de Indústria e Abastecimento",
+};
+
+const ordemAlfabetica = (a: string, b: string) => a.localeCompare(b, "pt-BR");
+/** Regiões em ordem alfabética, separadas em DF e Entorno (para as listas de escolha) */
+export const REGIOES_EM_GRUPOS = [
+  { grupo: GRUPOS_REGIOES.DF, regioes: [...REGIOES_DF].sort(ordemAlfabetica) },
+  { grupo: GRUPOS_REGIOES.Entorno, regioes: [...REGIOES_ENTORNO].sort(ordemAlfabetica) },
+];
+
+/** Nome mostrado na lista, com a dica de bairros quando houver */
+export const rotuloRegiao = (r: string) => (DICA_REGIAO[r as Regiao] ? `${r} (${DICA_REGIAO[r as Regiao]})` : r);
+
+/**
+ * Interpreta o filtro de região da busca: "DF", "Entorno" ou o nome de uma região.
+ * Devolve as regiões aceitas, ou null se o valor não for válido (= sem filtro).
+ */
+export function regioesDoFiltro(valor: string): { rotulo: string; regioes: readonly string[] } | null {
+  const grupo = GRUPOS_REGIOES[valor as keyof typeof GRUPOS_REGIOES];
+  if (grupo) return { rotulo: grupo.todas, regioes: grupo.regioes };
+  const regiao = REGIOES.find((r) => r === valor);
+  return regiao ? { rotulo: regiao, regioes: [regiao] } : null;
+}
 
 /** Categorias de materiais */
 export const CATEGORIAS = [
