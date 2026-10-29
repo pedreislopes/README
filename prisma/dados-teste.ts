@@ -69,8 +69,11 @@ export type MaterialTeste = {
   faixasParaCpf?: boolean;
   /** Marcas sorteadas entre as lojas (se não houver, usa as da categoria) */
   marcas?: string[];
-  /** Ferramenta de marca: a marca aparece em destaque em cada oferta */
-  compararMarca?: boolean;
+  /**
+   * Produto de MARCA: as ofertas usam os itens do catálogo central (PRODUTOS_DE_MARCA)
+   * e estas são as características comparadas (src/config/caracteristicas.ts).
+   */
+  caracteristicas?: "martelo" | "trena" | "ferramenta" | "tinta" | "piso" | "metais" | "eletrico";
 };
 
 export const MATERIAIS: MaterialTeste[] = [
@@ -121,31 +124,31 @@ export const MATERIAIS: MaterialTeste[] = [
   { id: "oculos-protecao", nome: "Óculos de proteção incolor", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "oculos protecao epi seguranca", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 12.9, marcas: ["3M", "Kalipso", "Danny"] },
   { id: "capacete-seguranca", nome: "Capacete de segurança com jugular", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "capacete protecao epi seguranca obra", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 29.9, marcas: ["3M", "Plastcor", "MSA"] },
   // Ferramentas de marca: um material "genérico" e a marca bem visível em cada oferta.
-  { id: "martelo-unha", nome: "Martelo de unha 27 mm", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "martelo ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 49.9, marcas: ["Tramontina", "Vonder", "Stanley", "Irwin"], compararMarca: true },
-  { id: "trena-5m", nome: "Trena 5 m", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "trena fita metrica medir ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 29.9, marcas: ["Stanley", "Vonder", "Starrett", "Tramontina"], compararMarca: true },
-  { id: "nivel-aluminio", nome: 'Nível de alumínio 12" (30 cm)', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "nivel bolha prumo ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 39.9, marcas: ["Vonder", "Stanley", "Tramontina"], compararMarca: true },
-  { id: "colher-pedreiro", nome: 'Colher de pedreiro 8"', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "colher pedreiro ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 24.9, marcas: ["Tramontina", "Bellota", "Vonder"], compararMarca: true },
-  { id: "desempenadeira-aco", nome: "Desempenadeira de aço lisa", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "desempenadeira desempenar reboco ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 34.9, marcas: ["Tramontina", "Vonder", "Bellota"], compararMarca: true },
+  { id: "martelo-unha", nome: "Martelo de unha 27 mm", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "martelo ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 49.9, caracteristicas: "martelo" },
+  { id: "trena-5m", nome: "Trena 5 m", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "trena fita metrica medir ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 29.9, caracteristicas: "trena" },
+  { id: "nivel-aluminio", nome: 'Nível de alumínio 12" (30 cm)', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "nivel bolha prumo ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 39.9, caracteristicas: "ferramenta" },
+  { id: "colher-pedreiro", nome: 'Colher de pedreiro 8"', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "colher pedreiro ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 24.9, caracteristicas: "ferramenta" },
+  { id: "desempenadeira-aco", nome: "Desempenadeira de aço lisa", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "desempenadeira desempenar reboco ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 34.9, caracteristicas: "ferramenta" },
 
   // --- Hidráulica ---
   { id: "tubo-pvc-25", nome: "Tubo PVC soldável 25 mm", categoria: "Hidráulica", unidadeBase: "m", palavrasChave: "cano agua fria 25mm 3/4", embalagem: "Barra 6 m", quantidadeBase: 6, precoReferencia: 24.9 },
   { id: "tubo-esgoto-100", nome: "Tubo PVC esgoto 100 mm", categoria: "Hidráulica", unidadeBase: "m", palavrasChave: "cano esgoto 100mm 4", embalagem: "Barra 6 m", quantidadeBase: 6, precoReferencia: 62 },
   { id: "caixa-dagua-1000", nome: "Caixa d'água polietileno 1.000 L", categoria: "Hidráulica", unidadeBase: "l", palavrasChave: "caixa dagua reservatorio 1000 litros", embalagem: "Unidade (1.000 L)", quantidadeBase: 1000, precoReferencia: 519 },
-  { id: "registro-gaveta", nome: 'Registro de gaveta 3/4" bruto', categoria: "Hidráulica", unidadeBase: "un", palavrasChave: "registro gaveta 3/4", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 44.9 },
+  { id: "registro-gaveta", nome: 'Registro de gaveta 3/4" bruto', categoria: "Hidráulica", unidadeBase: "un", palavrasChave: "registro gaveta 3/4", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 44.9, caracteristicas: "metais" },
 
   // --- Elétrica ---
   { id: "cabo-2-5", nome: "Cabo flexível 2,5 mm² 750 V", categoria: "Elétrica", unidadeBase: "m", palavrasChave: "fio cabo 2.5 tomada", embalagem: "Rolo 100 m", quantidadeBase: 100, precoReferencia: 229 },
   { id: "cabo-4", nome: "Cabo flexível 4 mm² 750 V", categoria: "Elétrica", unidadeBase: "m", palavrasChave: "fio cabo 4mm chuveiro", embalagem: "Rolo 100 m", quantidadeBase: 100, precoReferencia: 365 },
   { id: "eletroduto-3-4", nome: 'Eletroduto corrugado 3/4"', categoria: "Elétrica", unidadeBase: "m", palavrasChave: "conduite mangueira eletroduto", embalagem: "Rolo 50 m", quantidadeBase: 50, precoReferencia: 64.9 },
-  { id: "disjuntor-20a", nome: "Disjuntor monopolar 20 A", categoria: "Elétrica", unidadeBase: "un", palavrasChave: "disjuntor din 20a", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 15.9 },
+  { id: "disjuntor-20a", nome: "Disjuntor monopolar 20 A", categoria: "Elétrica", unidadeBase: "un", palavrasChave: "disjuntor din 20a", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 15.9, caracteristicas: "eletrico" },
 
   // --- Pisos e revestimentos ---
-  { id: "piso-ceramico-60", nome: "Piso cerâmico 60x60 cm PEI 4", categoria: "Pisos e revestimentos", unidadeBase: "m2", palavrasChave: "piso ceramica 60x60", embalagem: "Caixa 2,5 m²", quantidadeBase: 2.5, precoReferencia: 99.75 },
-  { id: "porcelanato-60", nome: "Porcelanato polido 60x60 cm", categoria: "Pisos e revestimentos", unidadeBase: "m2", palavrasChave: "porcelanato 60x60 piso", embalagem: "Caixa 1,44 m²", quantidadeBase: 1.44, precoReferencia: 86.3 },
+  { id: "piso-ceramico-60", nome: "Piso cerâmico 60x60 cm", categoria: "Pisos e revestimentos", unidadeBase: "m2", palavrasChave: "piso ceramica 60x60", embalagem: "Caixa 2,5 m²", quantidadeBase: 2.5, precoReferencia: 99.75, caracteristicas: "piso" },
+  { id: "porcelanato-60", nome: "Porcelanato 60x60 cm", categoria: "Pisos e revestimentos", unidadeBase: "m2", palavrasChave: "porcelanato 60x60 piso polido acetinado", embalagem: "Caixa 1,44 m²", quantidadeBase: 1.44, precoReferencia: 86.3, caracteristicas: "piso" },
   { id: "revestimento-parede", nome: "Revestimento de parede 32x57 cm", categoria: "Pisos e revestimentos", unidadeBase: "m2", palavrasChave: "azulejo revestimento parede", embalagem: "Caixa 2 m²", quantidadeBase: 2, precoReferencia: 69.8 },
 
   // --- Tintas ---
-  { id: "tinta-acrilica-18", nome: "Tinta acrílica fosca branca", categoria: "Tintas", unidadeBase: "l", palavrasChave: "tinta parede acrilica branca", embalagem: "Lata 18 L", quantidadeBase: 18, precoReferencia: 289 },
+  { id: "tinta-acrilica-18", nome: "Tinta acrílica branca 18 L", categoria: "Tintas", unidadeBase: "l", palavrasChave: "tinta parede acrilica branca fosca acetinada", embalagem: "Lata 18 L", quantidadeBase: 18, precoReferencia: 289, caracteristicas: "tinta" },
   { id: "massa-corrida", nome: "Massa corrida PVA", categoria: "Tintas", unidadeBase: "kg", palavrasChave: "massa corrida parede", embalagem: "Balde 25 kg", quantidadeBase: 25, precoReferencia: 84.9 },
   { id: "selador-acrilico", nome: "Selador acrílico", categoria: "Tintas", unidadeBase: "l", palavrasChave: "selador fundo parede", embalagem: "Lata 18 L", quantidadeBase: 18, precoReferencia: 149 },
 
@@ -248,3 +251,70 @@ export const PEDIDOS_EXEMPLO: PedidoExemplo[] = [
     ],
   },
 ];
+
+// -----------------------------------------------------------------------------
+// Catálogo central de produtos de MARCA (cadastrado pelo administrador)
+// -----------------------------------------------------------------------------
+// Marcas e modelos FICTÍCIOS, de propósito: as características abaixo são
+// inventadas para teste e não podem ser atribuídas a produtos reais.
+// Códigos de barras começam com 200 (faixa reservada para uso interno pelo
+// padrão GS1), para nunca coincidirem com produtos de verdade.
+// "foto": gera uma foto de teste (os demais usam a ilustração da categoria).
+// -----------------------------------------------------------------------------
+export type ProdutoDeMarcaTeste = {
+  materialId: string;
+  marca: string;
+  modelo: string;
+  /** Preço de referência, em reais */
+  preco: number;
+  caracteristicas: Record<string, string | number | boolean>;
+  foto?: boolean;
+  /** Cor principal da foto de teste */
+  cor?: string;
+};
+
+export const PRODUTOS_DE_MARCA: ProdutoDeMarcaTeste[] = [
+  // Martelo de unha 27 mm
+  { materialId: "martelo-unha", marca: "Forja Cerrado", modelo: "MU-27 cabo de madeira", preco: 39.9, foto: true, cor: "#b45309", caracteristicas: { peso_cabeca: 450, material_cabo: "Madeira", comprimento: 330, garantia_meses: 6 } },
+  { materialId: "martelo-unha", marca: "Aço Candango", modelo: "Pro 27 fibra", preco: 54.9, foto: true, cor: "#ea580c", caracteristicas: { peso_cabeca: 500, material_cabo: "Fibra de vidro", comprimento: 330, garantia_meses: 12 } },
+  { materialId: "martelo-unha", marca: "Ferramentas Ipê", modelo: "Unha 27 aço", preco: 69.9, caracteristicas: { peso_cabeca: 560, material_cabo: "Aço com empunhadura emborrachada", comprimento: 325, garantia_meses: 24 } },
+  { materialId: "martelo-unha", marca: "Planalto Tools", modelo: "MU27", preco: 44.9, caracteristicas: { peso_cabeca: 480 } },
+  // Trena 5 m
+  { materialId: "trena-5m", marca: "Medida Certa", modelo: "TR5 compacta", preco: 24.9, foto: true, cor: "#facc15", caracteristicas: { comprimento_fita: 5, largura_fita: 19, trava: true, material_caixa: "Plástico ABS", garantia_meses: 3 } },
+  { materialId: "trena-5m", marca: "Aço Candango", modelo: "Trena 5 m emborrachada", preco: 36.9, caracteristicas: { comprimento_fita: 5, largura_fita: 25, trava: true, material_caixa: "Plástico com borracha", garantia_meses: 12 } },
+  { materialId: "trena-5m", marca: "Planalto Tools", modelo: "PT-5", preco: 19.9, caracteristicas: { comprimento_fita: 5, largura_fita: 16, trava: false } },
+  // Nível de alumínio 30 cm
+  { materialId: "nivel-aluminio", marca: "Forja Cerrado", modelo: "Nível 12 pol.", preco: 34.9, foto: true, cor: "#64748b", caracteristicas: { material: "Alumínio", tamanho: "30 cm", garantia_meses: 6 } },
+  { materialId: "nivel-aluminio", marca: "Medida Certa", modelo: "NV30 magnético", preco: 49.9, caracteristicas: { material: "Alumínio com base magnética", tamanho: "30 cm", garantia_meses: 12 } },
+  { materialId: "nivel-aluminio", marca: "Ferramentas Ipê", modelo: "Nível 30", preco: 29.9, caracteristicas: { material: "Alumínio", tamanho: "30 cm" } },
+  // Colher de pedreiro 8"
+  { materialId: "colher-pedreiro", marca: "Forja Cerrado", modelo: "Colher 8 pol. madeira", preco: 22.9, foto: true, cor: "#a16207", caracteristicas: { material: "Aço carbono", tamanho: '8"', material_cabo: "Madeira", garantia_meses: 6 } },
+  { materialId: "colher-pedreiro", marca: "Aço Candango", modelo: "Colher 8 pol. Pro", preco: 32.9, caracteristicas: { material: "Aço carbono temperado", tamanho: '8"', material_cabo: "Plástico emborrachado", garantia_meses: 12 } },
+  { materialId: "colher-pedreiro", marca: "Ferramentas Ipê", modelo: "CP8", preco: 19.9, caracteristicas: { tamanho: '8"' } },
+  // Desempenadeira de aço lisa
+  { materialId: "desempenadeira-aco", marca: "Forja Cerrado", modelo: "Lisa 12 x 24 cm", preco: 29.9, foto: true, cor: "#475569", caracteristicas: { material: "Aço", tamanho: "12 x 24 cm", material_cabo: "Madeira", garantia_meses: 6 } },
+  { materialId: "desempenadeira-aco", marca: "Aço Candango", modelo: "Lisa Pro 12 x 28 cm", preco: 42.9, caracteristicas: { material: "Aço inox", tamanho: "12 x 28 cm", material_cabo: "Plástico emborrachado", garantia_meses: 12 } },
+  { materialId: "desempenadeira-aco", marca: "Planalto Tools", modelo: "DL-24", preco: 26.9, caracteristicas: { material: "Aço", tamanho: "12 x 24 cm" } },
+  // Tinta acrílica branca 18 L
+  { materialId: "tinta-acrilica-18", marca: "Cores do Cerrado", modelo: "Acrílica Econômica fosca", preco: 189, foto: true, cor: "#16a34a", caracteristicas: { rendimento_m2: 200, acabamento: "Fosco", lavavel: false, linha: "Econômica" } },
+  { materialId: "tinta-acrilica-18", marca: "Tintas Ipê", modelo: "Acrílica Standard fosca", preco: 259, foto: true, cor: "#7c3aed", caracteristicas: { rendimento_m2: 275, acabamento: "Fosco", lavavel: true, linha: "Standard" } },
+  { materialId: "tinta-acrilica-18", marca: "Pinta Brasília", modelo: "Acrílica Premium fosca", preco: 349, foto: true, cor: "#2563eb", caracteristicas: { rendimento_m2: 380, acabamento: "Fosco", lavavel: true, linha: "Premium" } },
+  { materialId: "tinta-acrilica-18", marca: "Cores do Cerrado", modelo: "Acrílica Premium acetinada", preco: 369, caracteristicas: { rendimento_m2: 360, acabamento: "Acetinado", lavavel: true, linha: "Premium" } },
+  // Piso cerâmico 60x60
+  { materialId: "piso-ceramico-60", marca: "Cerâmica Alvorada", modelo: "Granito Cinza", preco: 89.75, foto: true, cor: "#94a3b8", caracteristicas: { pei: "PEI 4", dimensoes: "60 x 60 cm", retificado: false, uso: "Interno" } },
+  { materialId: "piso-ceramico-60", marca: "Revest Paranoá", modelo: "Madeira Clara", preco: 109.5, foto: true, cor: "#d6a467", caracteristicas: { pei: "PEI 4", dimensoes: "60 x 60 cm", retificado: true, uso: "Interno" } },
+  { materialId: "piso-ceramico-60", marca: "Cerâmica Goiás", modelo: "Bege Rústico", preco: 99, caracteristicas: { pei: "PEI 5", dimensoes: "60 x 60 cm", retificado: false, uso: "Interno e externo" } },
+  // Porcelanato 60x60
+  { materialId: "porcelanato-60", marca: "Porcelanatos Lago Norte", modelo: "Polido Branco", preco: 86.3, foto: true, cor: "#e2e8f0", caracteristicas: { pei: "Não se aplica", dimensoes: "60 x 60 cm", retificado: true, uso: "Interno" } },
+  { materialId: "porcelanato-60", marca: "Revest Paranoá", modelo: "Acetinado Cimento", preco: 99.9, caracteristicas: { pei: "PEI 4", dimensoes: "60 x 60 cm", retificado: true, uso: "Interno e externo" } },
+  { materialId: "porcelanato-60", marca: "Cerâmica Alvorada", modelo: "Polido Marfim", preco: 79.9, caracteristicas: { dimensoes: "60 x 60 cm", retificado: true, uso: "Interno" } },
+  // Registro de gaveta 3/4" bruto
+  { materialId: "registro-gaveta", marca: "Hidro Lago", modelo: "RG 3/4 bruto", preco: 39.9, foto: true, cor: "#ca8a04", caracteristicas: { material: "Latão", bitola: '3/4"', garantia_meses: 60 } },
+  { materialId: "registro-gaveta", marca: "Metais Candango", modelo: "Registro gaveta 3/4", preco: 52.9, caracteristicas: { material: "Bronze", bitola: '3/4"', garantia_meses: 120 } },
+  { materialId: "registro-gaveta", marca: "Planalto Metais", modelo: "RG34 econômico", preco: 29.9, caracteristicas: { material: "Latão", bitola: '3/4"' } },
+  // Disjuntor monopolar 20 A
+  { materialId: "disjuntor-20a", marca: "Eletro Vale", modelo: "DIN 20 A curva C", preco: 14.9, foto: true, cor: "#1e293b", caracteristicas: { inmetro: true, corrente: 20, garantia_meses: 12 } },
+  { materialId: "disjuntor-20a", marca: "Proteção Total", modelo: "Mini disjuntor 20 A", preco: 19.9, caracteristicas: { inmetro: true, corrente: 20, garantia_meses: 60 } },
+  { materialId: "disjuntor-20a", marca: "Luz do Cerrado", modelo: "DJ20", preco: 11.9, caracteristicas: { corrente: 20 } },
+];
+

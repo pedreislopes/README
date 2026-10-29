@@ -15,13 +15,18 @@ import { CUSTO_BCRYPT, VERSAO_TERMOS } from "../src/config/seguranca";
 import type { Papel } from "../src/config/constantes";
 import { calcularComissao } from "../src/domain/comissao";
 import { digitosCnpj, digitosCpf } from "../src/domain/documentos";
+import { digitoEan } from "../src/domain/marcas";
 import { calcularItem } from "../src/domain/precos";
+import { otimizarImagem } from "../src/lib/fotos";
+import sharp from "sharp";
+import { svgDeTeste } from "./fotos-teste";
 import {
   CLIENTES,
   EMBALAGENS_ALTERNATIVAS,
   LOJAS,
   MATERIAIS,
   PEDIDOS_EXEMPLO,
+  PRODUTOS_DE_MARCA,
   SENHA_TESTE,
   VERSAO_DADOS_TESTE,
   CHAVE_VERSAO_DADOS_TESTE,
@@ -119,6 +124,7 @@ async function main() {
   console.log("Limpando o banco…");
   await db.adminLog.deleteMany();
   await db.storeImport.deleteMany();
+  await db.catalogImport.deleteMany();
   await db.passwordReset.deleteMany();
   await db.adRotation.deleteMany();
   await db.materialSuggestion.deleteMany();
@@ -129,6 +135,9 @@ async function main() {
   await db.purchase.deleteMany();
   await db.priceTier.deleteMany();
   await db.offer.deleteMany();
+  await db.photoSubmission.deleteMany();
+  await db.catalogItem.deleteMany();
+  await db.photo.deleteMany();
   await db.product.deleteMany();
   await db.store.deleteMany();
   await db.session.deleteMany();
@@ -234,9 +243,12 @@ async function main() {
         category: m.categoria,
         baseUnit: m.unidadeBase,
         keywords: m.palavrasChave ?? "",
-        brandMatters: m.compararMarca ?? false,
+        brandMatters: !!m.caracteristicas,
+        specTemplate: m.caracteristicas ?? "",
       },
     });
+    // Produto de marca: as ofertas são criadas a partir do catálogo central (abaixo)
+    if (m.caracteristicas) continue;
 
     const fatores = sortearFatores(aprovadas, anunciantes);
     // A loja pendente vende parte dos materiais (aparecem após a aprovação)
@@ -266,6 +278,7 @@ async function main() {
     }
   }
 
+  await criarCatalogoDeMarca(aprovadas, pendentes);
   await criarPedidosDeExemplo();
 
   // Sugestão de material aguardando o administrador
@@ -278,6 +291,21 @@ async function main() {
       note: "Muito pedido por construtoras de Taguatinga.",
     },
   });
+  // Sugestão de PRODUTO DE MARCA (o lojista informa só marca, modelo e código de barras)
+  await db.materialSuggestion.create({
+    data: {
+      storeId: "taguatinga",
+      kind: "PRODUTO_MARCA",
+      name: "Forja Cerrado MU-29 fibra",
+      category: "Ferragens, ferramentas e EPI",
+      baseUnit: "un",
+      typeProductId: "martelo-unha",
+      brand: "Forja Cerrado",
+      model: "MU-29 fibra",
+      ean: eanDeTeste(900),
+      note: "Clientes pedem o modelo de 29 mm.",
+    },
+  });
   await conferir(anunciantes);
 
   // Marca a versão dos dados de teste (o ambiente de teste regrava quando ela muda)
@@ -285,6 +313,76 @@ async function main() {
     where: { key: CHAVE_VERSAO_DADOS_TESTE },
     create: { key: CHAVE_VERSAO_DADOS_TESTE, value: VERSAO_DADOS_TESTE },
     update: { value: VERSAO_DADOS_TESTE },
+  });
+}
+
+/** Código de barras fictício e válido, na faixa 200 (uso interno, nunca é de um produto real) */
+function eanDeTeste(n: number) {
+  const doze = "200" + String(n).padStart(9, "0");
+  return doze + digitoEan(doze);
+}
+
+async function fotoDeTeste(materialId: string, cor: string | undefined, publica: boolean) {
+  const svg = svgDeTeste(materialId, cor);
+  if (!svg) return null;
+  const foto = await otimizarImagem(await sharp(Buffer.from(svg)).png().toBuffer());
+  if ("erro" in foto) throw new Error(foto.erro);
+  return (await db.photo.create({ data: { ...foto, public: publica }, select: { id: true } })).id;
+}
+
+/**
+ * Catálogo central de produtos de marca + ofertas das lojas.
+ * Cada item é vendido por 2 a 4 lojas, com preços até 15% diferentes entre elas.
+ */
+async function criarCatalogoDeMarca(aprovadas: string[], pendentes: string[]) {
+  console.log("Criando o catálogo de produtos de marca…");
+  for (const [i, item] of PRODUTOS_DE_MARCA.entries()) {
+    const m = MATERIAIS.find((x) => x.id === item.materialId)!;
+    const photoId = item.foto ? await fotoDeTeste(m.id, item.cor, true) : null;
+    const criado = await db.catalogItem.create({
+      data: {
+        productId: m.id,
+        brand: item.marca,
+        model: item.modelo,
+        ean: eanDeTeste(i + 1),
+        packageLabel: m.embalagem,
+        baseQuantity: m.quantidadeBase,
+        specs: JSON.stringify(item.caracteristicas),
+        photoId,
+        photoSource: photoId ? "Ilustração de teste" : null,
+        photoAuthorization: photoId ? "Imagem fictícia gerada para os dados de teste" : null,
+      },
+    });
+
+    // Sorteia de 2 a 4 lojas aprovadas (e às vezes a pendente)
+    const lojas = [...aprovadas].sort(() => sortear() - 0.5).slice(0, 2 + Math.floor(sortear() * 3));
+    for (const id of pendentes) if (sortear() < 0.3) lojas.push(id);
+    for (const lojaId of lojas) {
+      await db.offer.create({
+        data: {
+          storeId: lojaId,
+          productId: m.id,
+          catalogItemId: criado.id,
+          brand: item.marca,
+          packageLabel: m.embalagem,
+          baseQuantity: m.quantidadeBase,
+          priceCents: paraCentavos(item.preco * entre(1, 1.15)),
+        },
+      });
+    }
+  }
+
+  // Foto enviada por um lojista, aguardando a aprovação do administrador
+  const semFoto = await db.catalogItem.findFirstOrThrow({ where: { productId: "martelo-unha", photoId: null }, orderBy: { brand: "asc" } });
+  const photoId = (await fotoDeTeste("martelo-unha", "#0f766e", false))!;
+  await db.photoSubmission.create({
+    data: {
+      catalogItemId: semFoto.id,
+      storeId: "taguatinga",
+      photoId,
+      source: "Foto própria da loja",
+      authorization: "Tirada pela equipe da loja",
+    },
   });
 }
 
@@ -364,7 +462,7 @@ async function conferir(anunciantes: Set<string>) {
   let menorDif = Infinity;
   let maiorDif = 0;
 
-  for (const p of produtos) {
+  for (const p of produtos.filter((x) => !x.brandMatters)) {
     // Compara só a embalagem principal, em lojas aprovadas
     const principal = MATERIAIS.find((m) => m.id === p.id)!.embalagem;
     const ofertas = p.offers
@@ -376,6 +474,15 @@ async function conferir(anunciantes: Set<string>) {
     if (anunciantes.has(ofertas[0].storeId)) problemas.push(`${p.name}: loja anunciante é a mais barata`);
     if (dif < 0.05 || dif > 0.2) problemas.push(`${p.name}: diferença de ${(dif * 100).toFixed(1)}%`);
   }
+
+  // Produtos de marca: cada item do catálogo é vendido por pelo menos 2 lojas aprovadas
+  const itens = await db.catalogItem.findMany({ include: { offers: { include: { store: true } } } });
+  for (const item of itens) {
+    const lojas = item.offers.filter((o) => o.store.status === "APROVADA").length;
+    if (lojas < 2) problemas.push(`${item.brand} ${item.model}: só ${lojas} loja(s)`);
+  }
+  const comFoto = itens.filter((i) => i.photoId).length;
+  console.log(`✔ ${itens.length} produtos de marca no catálogo central (${comFoto} com foto)`);
 
   const totalOfertas = await db.offer.count();
   const comFaixas = await db.offer.count({ where: { tiers: { some: {} } } });

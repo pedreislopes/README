@@ -395,14 +395,14 @@ export const EXPLICACOES: Record<string, Explicacao> = {
 
   // --- Pisos e revestimentos -------------------------------------------------
   "piso-ceramico-60": {
-    oQueE: "Piso de cerâmica 60x60 cm, com resistência ao desgaste PEI 4.",
+    oQueE: "Piso de cerâmica de 60x60 cm. O PEI (de 1 a 5) indica a resistência ao desgaste.",
     paraQue: "Revestir o chão de salas, quartos e cozinhas.",
     quandoUsar: "Áreas internas com movimento médio a alto. Mais barato que porcelanato.",
     fonte: "ABNT NBR ISO 13006 (placas cerâmicas); PEI = resistência à abrasão",
     revisao: AGUARDANDO,
   },
   "porcelanato-60": {
-    oQueE: "Placa mais densa e resistente que a cerâmica, com brilho (polido).",
+    oQueE: "Placa mais densa e resistente que a cerâmica; pode ser polida (brilho) ou acetinada.",
     paraQue: "Pisos de salas e áreas nobres.",
     quandoUsar: "Quando quer acabamento mais bonito. Polido escorrega molhado: evite área externa.",
     fonte: "ABNT NBR 15463 (porcelanato)",

@@ -111,10 +111,11 @@ model Store {
   ownerId String @unique
   owner   User   @relation(fields: [ownerId], references: [id])
 
-  offers      Offer[]
-  orders      Order[]
-  suggestions MaterialSuggestion[]
-  imports     StoreImport[]
+  offers           Offer[]
+  orders           Order[]
+  suggestions      MaterialSuggestion[]
+  imports          StoreImport[]
+  photoSubmissions PhotoSubmission[]
 }
 
 /// Material do catálogo geral (ex.: "Cimento CP II").
@@ -129,37 +130,120 @@ model Product {
   baseUnit     String
   /// Palavras extras para a busca (ex.: "cp2 cp-ii portland")
   keywords     String  @default("")
-  /// Ferramenta de marca (martelo, trena…): a marca aparece em destaque em cada
-  /// oferta e o lojista é obrigado a informá-la
+  /// Produto de MARCA (martelo, tinta, piso…): cada oferta aponta para um item
+  /// do catálogo central de marca (CatalogItem), com marca, modelo e características.
+  /// Falso = material padronizado (cimento, areia…), comparado só pelo preço.
   brandMatters Boolean @default(false)
+  /// Quais características comparar lado a lado (src/config/caracteristicas.ts).
+  /// Ex.: "martelo", "tinta", "piso". Vazio = material padronizado.
+  specTemplate String  @default("")
 
-  offers Offer[]
+  offers       Offer[]
+  catalogItems CatalogItem[]
+}
+
+/// Item do CATÁLOGO CENTRAL de produtos de marca, cadastrado UMA vez pelo
+/// administrador (ex.: "Martelo de unha 27 mm" da marca X, modelo Y, EAN Z).
+/// O lojista só escolhe o item e informa preço e disponibilidade.
+model CatalogItem {
+  id                 String   @id @default(cuid())
+  /// Tipo de produto (o material genérico, ex.: "Martelo de unha 27 mm")
+  productId          String
+  brand              String
+  model              String
+  /// Código de barras (EAN/GTIN), só os números. Único no catálogo.
+  ean                String?  @unique
+  /// Embalagem do item (ex.: "Lata 18 L") e quanto da unidade de comparação ela tem
+  packageLabel       String
+  baseQuantity       Float
+  /// Características técnicas (JSON), conforme Product.specTemplate
+  specs              String   @default("{}")
+  /// Foto principal (aprovada). Origem e autorização são obrigatórias com a foto.
+  photoId            String?  @unique
+  photoSource        String?
+  photoAuthorization String?
+  /// Inativo = some das listas (não é apagado, para não quebrar pedidos antigos)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  product          Product           @relation(fields: [productId], references: [id])
+  photo            Photo?            @relation(fields: [photoId], references: [id])
+  offers           Offer[]
+  photoSubmissions PhotoSubmission[]
+
+  @@index([productId])
+}
+
+/// Foto já otimizada (WebP) guardada no banco: uma versão grande e uma miniatura.
+/// Fica no banco porque o site na Vercel não guarda arquivos enviados.
+model Photo {
+  id        String   @id @default(cuid())
+  large     Bytes
+  thumb     Bytes
+  width     Int
+  height    Int
+  sizeBytes Int
+  /// Só fotos públicas aparecem no site; as enviadas por lojistas esperam a aprovação
+  public    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  catalogItem CatalogItem?
+  submission  PhotoSubmission?
+}
+
+/// Foto enviada por um lojista para um item de marca SEM foto.
+/// Só aparece no site depois da aprovação do administrador.
+model PhotoSubmission {
+  id            String    @id @default(cuid())
+  catalogItemId String
+  storeId       String
+  photoId       String    @unique
+  /// Ex.: "Foto própria da loja", "Kit oficial do fabricante"
+  source        String
+  /// Ex.: "Tirada pela equipe da loja", "Autorizado pelo fabricante por e-mail"
+  authorization String
+  /// "PENDENTE" | "APROVADA" | "RECUSADA"
+  status        String    @default("PENDENTE")
+  reviewNote    String?
+  createdAt     DateTime  @default(now())
+  reviewedAt    DateTime?
+
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  store       Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  photo       Photo       @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }
 
 /// Um produto à venda em uma loja específica, com preço e embalagem.
 model Offer {
-  id           String  @id @default(cuid())
-  storeId      String
-  productId    String
-  brand        String?
+  id            String  @id @default(cuid())
+  storeId       String
+  productId     String
+  brand         String?
   /// Como aparece para o cliente (ex.: "Saco 50 kg", "Milheiro")
-  packageLabel String
+  packageLabel  String
   /// Quanto da unidade padronizada vem em 1 embalagem
   /// (ex.: saco de 50 kg = 50; milheiro = 1000; barra de 6 m = 6)
-  baseQuantity Float
+  baseQuantity  Float
   /// Preço normal de 1 embalagem, em centavos
-  priceCents   Int
+  priceCents    Int
   /// As faixas de atacado valem também para CPF? (padrão: só CNPJ)
-  tiersForCpf  Boolean @default(false)
+  tiersForCpf   Boolean @default(false)
   /// Menor fração vendida: 1 = só inteiros (sacos, peças); 0.5 = de meio em meio (ex.: 0,5 m³ de areia)
-  quantityStep Float   @default(1)
-  active       Boolean @default(true)
+  quantityStep  Float   @default(1)
+  active        Boolean @default(true)
+  /// Produto de marca: o item do catálogo central (marca, modelo, embalagem e
+  /// características vêm de lá). Nulo nos materiais padronizados.
+  catalogItemId String?
 
-  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  product    Product     @relation(fields: [productId], references: [id])
-  tiers      PriceTier[]
-  orderItems OrderItem[]
-  cartItems  CartItem[]
+  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id])
+  catalogItem CatalogItem? @relation(fields: [catalogItemId], references: [id])
+  tiers       PriceTier[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
 }
 
 /// Faixa de preço por quantidade (atacado).
@@ -276,21 +360,30 @@ model OrderItem {
 // Catálogo: sugestões de materiais novos (lojista sugere, administrador decide)
 // -----------------------------------------------------------------------------
 model MaterialSuggestion {
-  id         String    @id @default(cuid())
-  storeId    String
-  name       String
-  category   String
+  id            String    @id @default(cuid())
+  storeId       String
+  name          String
+  category      String
   /// Unidade de comparação sugerida: "kg" | "m3" | "m2" | "un" | "m" | "l"
-  baseUnit   String
-  note       String?
+  baseUnit      String
+  note          String?
   /// "PENDENTE" | "APROVADA" | "RECUSADA"
-  status     String    @default("PENDENTE")
+  status        String    @default("PENDENTE")
   /// Resposta do administrador (motivo da recusa, por exemplo)
-  reviewNote String?
-  reviewedAt DateTime?
+  reviewNote    String?
+  reviewedAt    DateTime?
   /// Material criado no catálogo quando a sugestão é aprovada
-  productId  String?
-  createdAt  DateTime  @default(now())
+  productId     String?
+  /// "MATERIAL" (material novo) | "PRODUTO_MARCA" (produto de marca de um tipo que já existe)
+  kind          String    @default("MATERIAL")
+  /// Produto de marca: tipo (material genérico), marca, modelo e código de barras informados pela loja
+  typeProductId String?
+  brand         String?
+  model         String?
+  ean           String?
+  /// Item criado no catálogo de marca quando a sugestão é aprovada
+  catalogItemId String?
+  createdAt     DateTime  @default(now())
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 }
@@ -363,4 +456,22 @@ model AdRotation {
 model SystemSetting {
   key   String @id
   value String
+}
+
+// -----------------------------------------------------------------------------
+// Importação do catálogo de marca por planilha (administrador)
+// -----------------------------------------------------------------------------
+/// Mesmo funcionamento da importação do lojista: "PREVIA" -> "APLICADA" | "DESCARTADA"
+model CatalogImport {
+  id        String    @id @default(cuid())
+  adminId   String
+  adminName String
+  fileName  String
+  status    String    @default("PREVIA")
+  rows      String
+  summary   String
+  createdAt DateTime  @default(now())
+  appliedAt DateTime?
+
+  @@index([createdAt])
 }
