@@ -88,7 +88,10 @@ recomendados** para o começo; 🟢 podem vir depois.
     devolução**, prazo de arrependimento, canal de atendimento;
   - **contrato com os lojistas** (comissão, planos Destaque/Premium, responsabilidades, suspensão);
   - regras de publicidade (os anúncios já aparecem como "Patrocinado");
-  - uso das **fotos de bancos gratuitos** (Unsplash/Pexels) e das **marcas** das ferramentas nas ofertas.
+  - uso das **fotos de bancos gratuitos** (Unsplash/Pexels), das **marcas** e das **fotos de produtos**
+    (kits de fabricantes e fotos enviadas pelas lojas: o site já registra a origem e a autorização de
+    cada foto, e a loja declara ter o direito de uso ao enviar);
+  - comparação de produtos de marca: só dados objetivos e conferíveis (o site nunca avalia marcas).
 - 🔴 **Teste de invasão (pentest) por profissional de segurança.** A revisão feita no MVP e os testes
   automáticos cobrem os acessos indevidos mais comuns, mas **não substituem** um especialista tentando
   invadir o site de verdade. Fazer no ambiente de teste, já com a versão que vai ao ar, e corrigir o que
@@ -115,9 +118,28 @@ recomendados** para o começo; 🟢 podem vir depois.
   sistema confere só se o número é válido).
 - 🟡 **Fotos dos produtos** e descrição mais completa. As **fotos das categorias** da página inicial
   já podem ser trocadas (README, seção 8); registre a origem em `CREDITOS-IMAGENS.md`.
+- 🔴 **Conferir as características dos produtos de marca reais** quando o catálogo de verdade for
+  cadastrado: os dados de teste são fictícios. Cada característica deve vir do fabricante (embalagem,
+  ficha técnica ou catálogo oficial).
 - 🔴 **Engenheiro revisar as explicações dos materiais** e os guias "Qual escolher?"
   (`src/config/explicacoes-materiais.ts`): cada texto tem a fonte e o campo `revisao` para registrar
   quem conferiu.
+- 🟡 **Avaliações de clientes** como complemento da comparação lado a lado: nota e comentário de quem
+  **comprou de verdade** pelo Solid (só depois do pedido entregue), separados das características
+  técnicas. Cuidados: moderação (ofensas, dados pessoais, propaganda), regra para responder e para
+  denunciar, nunca apagar avaliação negativa só por ser negativa, e deixar claro que a nota é dos
+  clientes e não do Solid. Vale também a "nota da loja" (entrega, atendimento), à parte da nota do
+  produto.
+- 🟡 **Parcerias com fabricantes** para receber os **catálogos de produtos** (marca, modelo, código de
+  barras, características) e os **kits oficiais de imagens**, já com a autorização de uso por escrito.
+  O caminho técnico já existe: o fabricante manda a planilha no modelo do Solid (aba **Marcas →
+  Importar planilha**) e as fotos entram com origem "Kit oficial do fabricante". Próximos passos: um
+  modelo de termo de autorização (com o advogado), um contato por fabricante e, depois, receber os
+  catálogos automaticamente (ver a seção 3, integração por API).
+- 🟢 **Guardar as fotos fora do banco de dados** quando o catálogo crescer (milhares de fotos): hoje
+  elas ficam no PostgreSQL, o que é simples e suficiente no começo. O passo seguinte é um serviço de
+  arquivos com CDN (ex.: Vercel Blob, Amazon S3 + CloudFront), mudando só `src/lib/fotos.ts` e
+  `src/app/fotos/`.
 - 🟢 **Nota fiscal**: em geral emitida pela loja; o Solid pode guardar o número/arquivo no pedido.
 - 🟢 **Avisos por WhatsApp** para o lojista (pedido novo) e para o cliente (pedido separado/entregue).
 - 🟢 Opção "comprar tudo numa loja só" também no carrinho comum (hoje existe na calculadora).
@@ -270,7 +292,8 @@ com comissões e planos de anúncio.
 ## 5. Ordem sugerida
 
 1. Publicar o **ambiente de teste** ([PUBLICAR-TESTE.md](PUBLICAR-TESTE.md)) e mostrar a lojistas parceiros e possíveis clientes.
-2. Em paralelo: **engenheiro** (coeficientes) e **advogado** (Termos, Privacidade, contrato com lojistas).
+2. Em paralelo: **engenheiro** (coeficientes) e **advogado** (Termos, Privacidade, contrato com lojistas),
+   e os primeiros contatos com **fabricantes** (catálogos e kits de imagens).
 3. Desenvolver: **e-mails automáticos** (e ligar o "esqueci minha senha" ao Resend), **frete por
    região**, **auditoria externa** e **backup**.
 4. Integrar o **pagamento** (com divisão automática para as lojas).

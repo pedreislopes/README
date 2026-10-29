@@ -100,7 +100,7 @@ No final deve aparecer uma lista com ✔, como `✔ 9 lojas, 44 materiais…` e
 npm test
 ```
 
-Deve terminar com algo como `Tests  135 passed`.
+Deve terminar com algo como `Tests  153 passed`.
 
 ### 1.7 Ligue o site
 
@@ -162,8 +162,14 @@ As outras lojas também têm login (senha `solid123`): `ceilandia@`, `aguasclara
 - Faixas de atacado só para CNPJ, **exceto** em *Argamassa colante AC-I* e *Bloco de concreto
   14x19x39*, que valem também para CPF.
 - **Ferragens, ferramentas e EPI**: pregos, parafusos, arames, discos, fita isolante, luvas, óculos,
-  capacete e ferramentas de marca (martelo, trena, nível, colher de pedreiro, desempenadeira), em que
-  cada oferta mostra a **marca** em destaque.
+  capacete e ferramentas de marca (martelo, trena, nível, colher de pedreiro, desempenadeira).
+- **Catálogo central de produtos de marca**: 32 produtos em 5 categorias — ferramentas, tintas, pisos
+  (cerâmico e porcelanato), registros e disjuntores —, cada um com marca, modelo, código de barras e
+  características; 14 têm foto. **Marcas, modelos, códigos de barras e fotos são fictícios** (para não
+  atribuir características inventadas a produtos reais). Os códigos começam com 200, faixa que o padrão
+  GS1 reserva para uso interno, e nunca coincidem com produtos de verdade.
+- 1 foto enviada por loja aguardando aprovação e 1 sugestão de produto de marca (na aba **Marcas** e em
+  **Materiais** do administrador).
 - 6 pedidos de exemplo e 1 sugestão de material aguardando o administrador.
 - Tudo isso fica em `prisma/dados-teste.ts`, em listas fáceis de ler e editar.
 
@@ -178,24 +184,30 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
    Veja o selo **Melhor preço**, as **Ofertas premium/destaque** no topo com "Patrocinado ⓘ" e o
    preço por kg. Busque `areia rosa` para ver as sugestões. Toque no **?** ao lado de *Areia fina*
    para ver a explicação do material. Em **Filtros → Região**, escolha **Todo o Entorno** ou **Lago Sul**.
-   Na página inicial, toque em **Areia e pedra** para ver o guia **Qual escolher?**. Busque `martelo`
-   para comparar preço e marca.
-2. **Carrinho** — adicione 42 sacos de cimento da Casa do Construtor Taguatinga e 2,5 m³ de areia.
+   Na página inicial, toque em **Areia e pedra** para ver o guia **Qual escolher?**.
+2. **Produtos de marca** — busque `tinta acrilica` e abra o produto. Veja **Mais barato de cada marca**,
+   filtre por marca, toque numa foto para ampliar, marque **Comparar** em 3 tintas e veja a tabela lado
+   a lado com o **custo por m² pintado**. Faça o mesmo com `martelo` (uma das marcas tem características
+   "Não informado").
+3. **Carrinho** — adicione 42 sacos de cimento da Casa do Construtor Taguatinga e 2,5 m³ de areia.
    Vá ao carrinho e entre com `cnpj@teste.com`: os itens continuam lá, aparece
    "Adicione mais 8 sacos e pague…". Toque em **Levar 50 sacos** e depois em **Confirmar pedido**.
-3. **Calculadora** — em **Calcular**, escolha *Muro de alvenaria*, 10 m × 2 m. Veja o cálculo passo a
+4. **Calculadora** — em **Calcular**, escolha *Muro de alvenaria*, 10 m × 2 m. Veja o cálculo passo a
    passo, compare **Menor preço por item** com **Tudo numa loja só** e monte o carrinho.
-4. **Lojista** — saia da conta e entre com `lojista@teste.com`. Veja o aviso de pedidos novos, a
+5. **Lojista** — saia da conta e entre com `lojista@teste.com`. Veja o aviso de pedidos novos, a
    comissão de cada pedido, avance o status e cancele um pedido com motivo. Em **Produtos**, mude um
    preço direto na lista, marque um item como **Sem estoque** e faça um reajuste de +5%. Toque em
    **Importar planilha**, baixe o modelo em Excel, mude alguns preços, envie e confira o resumo antes
-   de confirmar.
-5. **Administrador** — entre com `admin@teste.com`. Aprove o *Depósito Nova Era*, mude a comissão e o
-   plano de anúncio de uma loja, baixe a planilha de pedidos e confira tudo em **Registro**.
-6. **Esqueci minha senha** — saia da conta, toque em **Entrar → Esqueci minha senha** e informe
+   de confirmar. Em **Cadastrar produto**, digite um código de barras da aba *Produtos de marca* do
+   modelo: o produto é encontrado sozinho. Abra um produto de marca sem foto e toque em **Enviar foto**.
+6. **Administrador** — entre com `admin@teste.com`. Aprove o *Depósito Nova Era*, mude a comissão e o
+   plano de anúncio de uma loja, baixe a planilha de pedidos e confira tudo em **Registro**. Na aba
+   **Marcas**, aprove a foto enviada pela loja e abra um produto para ver as características; em
+   **Materiais**, toque em **Completar e aprovar** na sugestão *Forja Cerrado MU-29 fibra*.
+7. **Esqueci minha senha** — saia da conta, toque em **Entrar → Esqueci minha senha** e informe
    `cpf@teste.com`. Como ainda não há serviço de e-mail, o link aparece no **terminal** onde o site está
    rodando (`npm run dev`). Abra o link, crie uma senha nova e entre com ela.
-7. Quando terminar, rode `npm run banco:resetar` para voltar os dados ao início (inclusive as senhas).
+8. Quando terminar, rode `npm run banco:resetar` para voltar os dados ao início (inclusive as senhas).
 
 ---
 
@@ -227,8 +239,14 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 - **Explicação dos materiais**: ícone **?** ao lado do nome (busca, página do produto e calculadora) com
   *o que é, para que serve e quando usar*; e o guia **Qual escolher?** na página de cada categoria.
   **Textos em `src/config/explicacoes-materiais.ts`, com fonte e campo de revisão para o engenheiro.**
-- **Ferramentas de marca** (martelo, trena…): um material genérico com a **marca em destaque** em cada
-  oferta, para comparar preço e marca lado a lado.
+- **Produtos de marca** (ferramentas, tintas, pisos, metais, disjuntores…): filtro por **marca** na busca
+  e na página do produto, o **mais barato de cada marca** e o **Melhor preço** geral; foto de cada
+  produto (toque para ampliar; sem foto, a ilustração da categoria).
+- **Comparação lado a lado** de 2 a 3 produtos do mesmo tipo: marca, características e menor preço de
+  cada um; nas tintas, o **custo por m² pintado** (preço ÷ rendimento). O que não foi cadastrado aparece
+  como "Não informado". Só dados objetivos, nunca avaliação de marcas. O que cada tipo compara fica em
+  `src/config/caracteristicas.ts`. Cimento, areia, brita e outros materiais padronizados continuam
+  comparados só pelo preço por kg/m³.
 - **Anúncios identificados**: até 3 no topo (ajustável em `src/config/anuncios.ts`). Lojas **Premium**
   vêm primeiro, depois **Destaque**, cada plano ordenado por preço e com rodízio justo quando há mais
   lojas que vagas. A palavra **"Patrocinado"** fica sempre visível (Código de Defesa do Consumidor).
@@ -254,7 +272,11 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
   altera preços, faixas de atacado e disponibilidade, envia e vê o resumo antes de gravar ("12 preços
   alterados, 3 produtos novos, 2 erros"), com os erros apontados **linha por linha**. Cada importação
   fica no **histórico** da loja.
-- Nas **ferramentas de marca**, a marca é obrigatória no cadastro.
+- **Produtos de marca sem trabalho extra**: o lojista só escolhe o produto na lista (ou digita o código de
+  barras) e informa preço e disponibilidade. Na planilha, basta o **código de barras** e o preço.
+- Produto de marca que não está no catálogo: **Sugerir material → Produto de marca** (só marca, modelo e
+  código de barras). Produto sem foto: **Enviar foto** (JPG, PNG ou WEBP até 5 MB; aparece depois da
+  aprovação do administrador).
 - **Sugerir material** que não está no catálogo; ver o **plano de anúncio** da loja.
 - Loja pendente usa o painel normalmente, com o aviso de que ainda não aparece na busca.
 
@@ -263,7 +285,11 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 - **Lojas**: aprovar, recusar (com motivo), suspender (com motivo) e reativar; comissão (vale só para
   pedidos novos); **plano de anúncio** (Nenhum, Destaque ou Premium).
 - **Relatório** de pedidos e comissões por período, loja e situação, com **planilha CSV**.
-- **Catálogo**: incluir materiais (com a opção "ferramenta de marca") e aprovar/recusar sugestões dos lojistas.
+- **Catálogo**: incluir materiais (padronizados ou de marca) e aprovar/recusar sugestões dos lojistas.
+- **Marcas** (catálogo central de produtos de marca): cadastrar cada produto uma vez, com marca, modelo,
+  código de barras, características e foto (com **origem** e **autorização de uso**); aprovar ou recusar
+  as fotos enviadas pelas lojas; **importar planilha** de catálogo de fabricante (prévia com erros por
+  linha; o código de barras atualiza o que já existe).
 - **Registro (auditoria)** de todas as ações do administrador: quem fez, o quê e quando.
 
 ### Segurança
@@ -281,8 +307,8 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 
 | Comando | O que testa |
 |---|---|
-| `npm test` | **135 testes das regras**: busca (com sinônimos e plurais), preço por unidade, faixas de atacado, carrinho, calculadora, comissão, cancelamento, relatório/CSV, anúncios Premium/Destaque e rodízio (contador no banco), CPF/CNPJ, limite de login, regiões do DF/Entorno, explicações dos materiais, importação por planilha, "esqueci minha senha", imagens das categorias, configuração do banco PostgreSQL da Vercel. |
-| `npm run test:e2e` | **43 testes de ponta a ponta**: um navegador de verdade, do tamanho de um **celular de 360 px**, clica pelo site inteiro (página inicial, busca e filtros de região, explicação dos materiais, cadastro, "esqueci minha senha", carrinho, pedido, calculadora, lojista, importação por planilha, administrador e segurança). |
+| `npm test` | **153 testes das regras**: busca (com sinônimos e plurais), preço por unidade, faixas de atacado, carrinho, calculadora, comissão, cancelamento, relatório/CSV, anúncios Premium/Destaque e rodízio (contador no banco), CPF/CNPJ, limite de login, regiões do DF/Entorno, explicações dos materiais, importação por planilha, "esqueci minha senha", imagens das categorias, produtos de marca (código de barras, características, comparação, custo por m², mais barato por marca, importação do catálogo), configuração do banco PostgreSQL da Vercel. |
+| `npm run test:e2e` | **56 testes de ponta a ponta**: um navegador de verdade, do tamanho de um **celular de 360 px**, clica pelo site inteiro (página inicial, busca e filtros de região, explicação dos materiais, cadastro, "esqueci minha senha", carrinho, pedido, calculadora, lojista, importação por planilha, produtos de marca e comparação lado a lado, fotos, administrador e segurança). |
 
 Para os testes de ponta a ponta, na primeira vez rode também `npx playwright install chromium`
 (baixa o navegador de teste). **Atenção:** eles apagam e recriam os dados de teste do banco.
@@ -323,6 +349,7 @@ npm run lint           # verificador de código
 | `prisma/schema.prisma` | Estrutura do banco de dados (comentada) |
 | `prisma/dados-teste.ts` / `prisma/seed.ts` | Dados de teste e o programa que os grava |
 | `e2e/` | Testes de ponta a ponta |
+| `src/config/caracteristicas.ts` | O que comparar em cada tipo de produto de marca (martelo, tinta, piso…) |
 | `src/config/explicacoes-materiais.ts` | Explicações dos materiais e guias "Qual escolher?" (para o engenheiro revisar) |
 | `public/categorias/` | Imagens das categorias da página inicial (veja a seção 8) |
 | `scripts/` | Publicação na Vercel, cópia PostgreSQL do banco, ilustrações das categorias |

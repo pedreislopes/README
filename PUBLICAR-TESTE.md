@@ -145,7 +145,7 @@ Pronto: a Vercel guardou, sozinha, o endereço secreto do banco nas variáveis d
 3. Na janelinha, toque em **Redeploy** de novo.
 4. Espere de 2 a 4 minutos. Desta vez, o registro mostra, entre outras coisas:
    - `Banco vazio: gravando os dados de teste…`
-   - `✔ 11 lojas, 60 materiais, 568 ofertas`
+   - `✔ 11 lojas, 60 materiais, 586 ofertas`
    - e termina com **Ready** (pronto) ✅.
 
 O que aconteceu por baixo dos panos: o Solid criou as tabelas no banco, gravou as lojas, produtos e
@@ -214,7 +214,7 @@ um endereço de **prévia** separado (*Preview*), usando o **mesmo banco de test
 Os dados **não** são apagados nessas publicações, com duas exceções:
 - quando você usa `RESETAR_DADOS_TESTE=sim` (veja acima);
 - quando **os próprios dados de teste mudam** numa atualização (ex.: lojas ou materiais novos). Aí o
-  registro da publicação mostra `Dados de teste mudaram (versão 1 → 2): recriando os dados de teste…`
+  registro da publicação mostra, por exemplo, `Dados de teste mudaram (versão 2 → 3): recriando os dados de teste…`
   e tudo volta ao início, já com os dados novos. Pedidos e alterações feitos nos testes se perdem.
 
 ### Ver o link de "Esqueci minha senha"
