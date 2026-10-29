@@ -45,6 +45,18 @@ export function normalizarEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/** Regras de senha (cadastro e "Esqueci minha senha") */
+export function validarNovaSenha(senha: string, confirmacao: string): { senha?: string; confirmacao?: string } {
+  const erros: { senha?: string; confirmacao?: string } = {};
+  if (senha.length < SENHA_MIN || senha.length > SENHA_MAX) {
+    erros.senha = `A senha deve ter de ${SENHA_MIN} a ${SENHA_MAX} caracteres.`;
+  } else if (!/[a-zA-Z]/.test(senha) || !/\d/.test(senha)) {
+    erros.senha = "Use pelo menos uma letra e um número.";
+  }
+  if (confirmacao !== senha) erros.confirmacao = "As senhas não são iguais.";
+  return erros;
+}
+
 export function validarCadastro(
   d: DadosCadastro,
 ): { ok: true; dados: CadastroValido } | { ok: false; erros: ErrosCadastro } {
@@ -67,12 +79,7 @@ export function validarCadastro(
   const telefone = somenteNumeros(d.telefone);
   if (telefone.length < 10 || telefone.length > 11) erros.telefone = "Informe o telefone com DDD.";
 
-  if (d.senha.length < SENHA_MIN || d.senha.length > SENHA_MAX) {
-    erros.senha = `A senha deve ter de ${SENHA_MIN} a ${SENHA_MAX} caracteres.`;
-  } else if (!/[a-zA-Z]/.test(d.senha) || !/\d/.test(d.senha)) {
-    erros.senha = "Use pelo menos uma letra e um número.";
-  }
-  if (d.confirmacao !== d.senha) erros.confirmacao = "As senhas não são iguais.";
+  Object.assign(erros, validarNovaSenha(d.senha, d.confirmacao));
 
   if (!d.aceiteTermos) erros.aceiteTermos = "É preciso aceitar os Termos de Uso e a Política de Privacidade.";
 

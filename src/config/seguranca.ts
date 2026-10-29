@@ -12,6 +12,16 @@ export const LIMITE_LOGIN = {
   janelaMinutos: 15,
 };
 
+/** "Esqueci minha senha" */
+export const RECUPERACAO_SENHA = {
+  /** Por quanto tempo o link enviado por e-mail funciona */
+  validadeMinutos: 30,
+  /** Pedidos de link permitidos para o MESMO e-mail e para o MESMO IP, dentro da janela */
+  pedidosPorEmail: 3,
+  pedidosPorIp: 10,
+  janelaMinutos: 60,
+};
+
 /** Quanto tempo a pessoa fica logada sem precisar entrar de novo */
 export const DURACAO_SESSAO_DIAS = 30;
 

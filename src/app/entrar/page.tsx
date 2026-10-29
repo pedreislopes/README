@@ -8,7 +8,7 @@ export const metadata = { title: "Entrar" };
 
 export default async function Entrar(props: PageProps<"/entrar">) {
   if (await usuarioAtual()) redirect("/conta");
-  const { voltar } = await props.searchParams;
+  const { voltar, senha } = await props.searchParams;
 
   return (
     <div className="mx-auto max-w-sm space-y-6 pt-4">
@@ -16,6 +16,11 @@ export default async function Entrar(props: PageProps<"/entrar">) {
         <h1 className="text-2xl font-extrabold">Entrar no Solid</h1>
         <p className="mt-1 text-slate-600">Use o e-mail e a senha do seu cadastro.</p>
       </div>
+      {senha === "redefinida" && (
+        <p role="status" className="rounded-xl bg-emerald-50 p-3 font-semibold text-emerald-800">
+          Senha alterada! Entre com a nova senha.
+        </p>
+      )}
       <FormularioLogin voltar={typeof voltar === "string" ? voltar : ""} />
       {ehAmbienteDeTeste() && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
