@@ -33,6 +33,13 @@ function CamposMaterial({ v }: { v: (campo: string, padrao?: string) => string }
         aria-label="Palavras para a busca"
         className={estiloCampo}
       />
+      <label className="flex items-start gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="compararMarca" defaultChecked={v("compararMarca") === "on"} className="mt-0.5 h-5 w-5 accent-marca-600" />
+        <span>
+          <strong>Ferramenta de marca</strong> (martelo, trena…): a marca aparece em destaque e o lojista é obrigado a
+          informá-la.
+        </span>
+      </label>
     </>
   );
 }

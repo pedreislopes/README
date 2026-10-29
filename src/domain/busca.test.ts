@@ -86,4 +86,17 @@ describe("busca de materiais", () => {
   it("devolve tudo quando a busca está vazia", () => {
     expect(buscar("")).toHaveLength(catalogo.length);
   });
+
+  it("ferragens e EPI: plural, sinônimos e nome popular", () => {
+    expect(buscar("pregos")).toEqual(expect.arrayContaining(["prego-18x27", "prego-17x21"]));
+    expect(buscar("prego")).toEqual(expect.arrayContaining(["prego-18x27", "prego-17x21"]));
+    expect(buscar("luva")).toEqual(expect.arrayContaining(["luva-nitrilica", "luva-raspa"]));
+    expect(buscar("luvas de proteção")).toEqual(expect.arrayContaining(["luva-nitrilica", "luva-raspa"]));
+    expect(buscar("epi")).toEqual(expect.arrayContaining(["capacete-seguranca", "oculos-protecao", "luva-nitrilica"]));
+    expect(primeiro("fita isolante")).toBe("fita-isolante");
+    expect(primeiro("disco de corte")).toBe("disco-corte-ferro");
+    expect(primeiro("martelo")).toBe("martelo-unha");
+    expect(primeiro("trena")).toBe("trena-5m");
+    expect(primeiro("parafusos")).toBe("parafuso-madeira");
+  });
 });

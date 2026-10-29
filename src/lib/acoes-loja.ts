@@ -45,11 +45,11 @@ export async function salvarProduto(_anterior: EstadoProduto, form: FormData): P
     priceCents: reaisParaCentavos(String(form.get("preco") ?? "")) ?? 0,
     quantityStep: numero(form.get("quantityStep")) || 1,
     tiers,
+    brand: String(form.get("brand") ?? "").trim() || null,
   };
-  const erros: EstadoProduto["erros"] = validarOferta(dados);
-  if (dados.productId && !(await db.product.findUnique({ where: { id: dados.productId } }))) {
-    erros.productId = "Material não encontrado.";
-  }
+  const material = dados.productId ? await db.product.findUnique({ where: { id: dados.productId } }) : null;
+  const erros: EstadoProduto["erros"] = validarOferta({ ...dados, exigeMarca: material?.brandMatters });
+  if (dados.productId && !material) erros.productId = "Material não encontrado.";
   if (Object.keys(erros).length > 0) return { erros, enviado, resposta: Date.now() };
 
   // Mesma embalagem do mesmo material repetida na loja
@@ -64,7 +64,7 @@ export async function salvarProduto(_anterior: EstadoProduto, form: FormData): P
     baseQuantity: dados.baseQuantity,
     priceCents: dados.priceCents,
     quantityStep: dados.quantityStep,
-    brand: String(form.get("brand") ?? "").trim() || null,
+    brand: dados.brand,
     tiersForCpf: form.get("tiersForCpf") === "on",
     active: form.get("active") === "on",
   };

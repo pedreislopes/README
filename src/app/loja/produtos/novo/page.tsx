@@ -7,7 +7,7 @@ export const metadata = { title: "Cadastrar produto" };
 export default async function NovoProduto() {
   await exigirLoja();
   const materiais = await db.product.findMany({
-    select: { id: true, name: true, category: true, baseUnit: true },
+    select: { id: true, name: true, category: true, baseUnit: true, brandMatters: true },
     orderBy: [{ category: "asc" }, { name: "asc" }],
   });
   return (

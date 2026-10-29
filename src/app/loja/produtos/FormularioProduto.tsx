@@ -9,7 +9,7 @@ import { Alerta, estiloBotaoPrincipal, estiloCampo, MensagemErro } from "@/compo
 import { UNIDADES_BASE, type UnidadeBase } from "@/config/constantes";
 import { excluirProduto, salvarProduto } from "@/lib/acoes-loja";
 
-type Material = { id: string; name: string; category: string; baseUnit: string };
+type Material = { id: string; name: string; category: string; baseUnit: string; brandMatters: boolean };
 
 export type ValoresProduto = {
   id?: string;
@@ -147,9 +147,21 @@ export function FormularioProduto({ materiais, valores }: { materiais: Material[
         </div>
         <div>
           <label htmlFor="brand" className="block text-sm font-semibold">
-            Marca <span className="font-normal text-slate-500">(opcional)</span>
+            Marca{" "}
+            {material?.brandMatters ? (
+              <span className="font-normal text-marca-700">(obrigatória)</span>
+            ) : (
+              <span className="font-normal text-slate-500">(opcional)</span>
+            )}
           </label>
-          <input id="brand" name="brand" defaultValue={v("brand", valores.brand)} className={estiloCampo} />
+          <input
+            id="brand"
+            name="brand"
+            defaultValue={v("brand", valores.brand)}
+            className={estiloCampo}
+            aria-invalid={e.brand ? true : undefined}
+          />
+          <MensagemErro erro={e.brand} />
         </div>
       </div>
 

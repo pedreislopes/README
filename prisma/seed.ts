@@ -23,6 +23,8 @@ import {
   MATERIAIS,
   PEDIDOS_EXEMPLO,
   SENHA_TESTE,
+  VERSAO_DADOS_TESTE,
+  CHAVE_VERSAO_DADOS_TESTE,
   type MaterialTeste,
 } from "./dados-teste";
 
@@ -116,6 +118,9 @@ function sortearFatores(lojasAprovadas: string[], anunciantes: Set<string>) {
 async function main() {
   console.log("Limpando o banco…");
   await db.adminLog.deleteMany();
+  await db.storeImport.deleteMany();
+  await db.passwordReset.deleteMany();
+  await db.adRotation.deleteMany();
   await db.materialSuggestion.deleteMany();
   await db.cartItem.deleteMany();
   await db.cart.deleteMany();
@@ -196,7 +201,7 @@ async function main() {
     comFaixas = false,
   ) {
     const priceCents = paraCentavos(reais);
-    const marcas = MARCAS[m.categoria];
+    const marcas = m.marcas ?? MARCAS[m.categoria];
     await db.offer.create({
       data: {
         storeId: lojaId,
@@ -229,6 +234,7 @@ async function main() {
         category: m.categoria,
         baseUnit: m.unidadeBase,
         keywords: m.palavrasChave ?? "",
+        brandMatters: m.compararMarca ?? false,
       },
     });
 
@@ -273,6 +279,13 @@ async function main() {
     },
   });
   await conferir(anunciantes);
+
+  // Marca a versão dos dados de teste (o ambiente de teste regrava quando ela muda)
+  await db.systemSetting.upsert({
+    where: { key: CHAVE_VERSAO_DADOS_TESTE },
+    create: { key: CHAVE_VERSAO_DADOS_TESTE, value: VERSAO_DADOS_TESTE },
+    update: { value: VERSAO_DADOS_TESTE },
+  });
 }
 
 /** Cria pedidos de exemplo usando as MESMAS regras de preço e comissão do site */

@@ -18,7 +18,7 @@ export default async function EditarProduto(props: PageProps<"/loja/produtos/[id
   if (!oferta) notFound();
 
   const materiais = await db.product.findMany({
-    select: { id: true, name: true, category: true, baseUnit: true },
+    select: { id: true, name: true, category: true, baseUnit: true, brandMatters: true },
     orderBy: [{ category: "asc" }, { name: "asc" }],
   });
   return (

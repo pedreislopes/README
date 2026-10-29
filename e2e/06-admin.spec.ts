@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { entrar, principal, semRolagemLateral } from "./ajuda";
+import { db, entrar, principal, semRolagemLateral } from "./ajuda";
 
 test.describe("Painel do administrador", () => {
   test.beforeEach(async ({ page }) => {
@@ -23,7 +23,8 @@ test.describe("Painel do administrador", () => {
     await loja(page, "Nova Era").getByRole("button", { name: "Aprovar" }).click();
     await expect(loja(page, "Nova Era")).toHaveCount(0);
     const busca = await page.context().newPage();
-    await busca.goto("/produto/cimento-cp2");
+    const vendido = await db.offer.findFirstOrThrow({ where: { storeId: "vicente-pires" } });
+    await busca.goto(`/produto/${vendido.productId}`);
     await expect(principal(busca).getByText("Depósito Nova Era Vicente Pires").first()).toBeVisible();
 
     // Comissão (vale só para pedidos novos)

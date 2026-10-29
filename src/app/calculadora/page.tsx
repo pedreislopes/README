@@ -1,5 +1,6 @@
 // Calculadora de obra: /calculadora?servico=muro&comprimento=10&altura=2
 // 1. Escolha do serviço  2. Medidas  3. Lista de materiais com o menor preço
+import { EXPLICACOES } from "@/config/explicacoes-materiais";
 import Link from "next/link";
 import { BrickWall, ChevronLeft, Info, Layers, PaintRoller, Square, SquareStack } from "lucide-react";
 import { AVISO_ESTIMATIVA, PERDA_PADRAO, SERVICOS, type Servico } from "@/config/calculadora";
@@ -221,6 +222,9 @@ async function Resultado({
       explicacao: m.explicacao,
       fonte: m.material.fonte,
       conferir: m.material.conferir,
+      ajuda: EXPLICACOES[m.material.produtoId]
+        ? (({ oQueE, paraQue, quandoUsar }) => ({ oQueE, paraQue, quandoUsar }))(EXPLICACOES[m.material.produtoId])
+        : undefined,
       exatoTexto: `${formatarQuantidade(Math.round(m.exato * 100) / 100)} ${m.material.unidadeTexto}`,
       porItem: paraLista(produto ? escolherOfertaMaisBarata(m.exato, produto.offers, papel) : null),
       lojaUnica: paraLista(lojaUnica?.escolhas.get(m.material.produtoId)),

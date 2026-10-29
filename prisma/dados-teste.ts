@@ -9,6 +9,10 @@
 // calculada automaticamente no seed.ts.
 // =============================================================================
 
+// Ao mudar estas listas, aumente a versão em scripts/versao-dados-teste.mjs:
+// o ambiente de teste da Vercel regrava os dados sozinho na próxima publicação.
+export { CHAVE_VERSAO_DADOS_TESTE, VERSAO_DADOS_TESTE } from "../scripts/versao-dados-teste.mjs";
+
 /** Senha de TODOS os usuários de teste */
 export const SENHA_TESTE = "solid123";
 
@@ -63,6 +67,10 @@ export type MaterialTeste = {
   faixas?: Faixa[];
   /** Faixas de atacado liberadas também para CPF (padrão: só CNPJ) */
   faixasParaCpf?: boolean;
+  /** Marcas sorteadas entre as lojas (se não houver, usa as da categoria) */
+  marcas?: string[];
+  /** Ferramenta de marca: a marca aparece em destaque em cada oferta */
+  compararMarca?: boolean;
 };
 
 export const MATERIAIS: MaterialTeste[] = [
@@ -91,13 +99,33 @@ export const MATERIAIS: MaterialTeste[] = [
   { id: "bloco-concreto-14", nome: "Bloco de concreto 14x19x39 cm", categoria: "Tijolos e blocos", unidadeBase: "un", palavrasChave: "bloco concreto estrutural 14", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 4.2, faixas: FAIXAS.blocos, faixasParaCpf: true },
   { id: "bloco-concreto-9", nome: "Bloco de concreto 9x19x39 cm", categoria: "Tijolos e blocos", unidadeBase: "un", palavrasChave: "bloco concreto vedacao 9", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 3.3, faixas: FAIXAS.blocos },
 
-  // --- Ferragens e aço ---
-  { id: "vergalhao-10mm", nome: 'Vergalhão CA-50 3/8" (10 mm)', categoria: "Ferragens e aço", unidadeBase: "m", palavrasChave: "vergalhao ferro 3/8 10mm ca50", embalagem: "Barra 12 m", quantidadeBase: 12, precoReferencia: 52, faixas: FAIXAS.barras },
-  { id: "vergalhao-8mm", nome: 'Vergalhão CA-50 5/16" (8 mm)', categoria: "Ferragens e aço", unidadeBase: "m", palavrasChave: "vergalhao ferro 5/16 8mm ca50", embalagem: "Barra 12 m", quantidadeBase: 12, precoReferencia: 36, faixas: FAIXAS.barras },
-  { id: "vergalhao-4-2mm", nome: "Vergalhão CA-60 4,2 mm", categoria: "Ferragens e aço", unidadeBase: "m", palavrasChave: "vergalhao ferro 4.2 estribo ca60", embalagem: "Barra 12 m", quantidadeBase: 12, precoReferencia: 13.5, faixas: FAIXAS.barras },
-  { id: "arame-recozido", nome: "Arame recozido nº 18", categoria: "Ferragens e aço", unidadeBase: "kg", palavrasChave: "arame amarrar ferro", embalagem: "Rolo 1 kg", quantidadeBase: 1, precoReferencia: 21.9 },
-  { id: "prego-18x27", nome: "Prego com cabeça 18x27", categoria: "Ferragens e aço", unidadeBase: "kg", palavrasChave: "prego", embalagem: "Pacote 1 kg", quantidadeBase: 1, precoReferencia: 20.9 },
-  { id: "malha-pop", nome: "Tela soldada POP 15x15 cm 4,2 mm (2x3 m)", categoria: "Ferragens e aço", unidadeBase: "un", palavrasChave: "malha pop tela soldada contrapiso", embalagem: "Painel 2x3 m", quantidadeBase: 1, precoReferencia: 68 },
+  // --- Aço para estrutura ---
+  { id: "vergalhao-10mm", nome: 'Vergalhão CA-50 3/8" (10 mm)', categoria: "Aço para estrutura", unidadeBase: "m", palavrasChave: "vergalhao ferro 3/8 10mm ca50", embalagem: "Barra 12 m", quantidadeBase: 12, precoReferencia: 52, faixas: FAIXAS.barras },
+  { id: "vergalhao-8mm", nome: 'Vergalhão CA-50 5/16" (8 mm)', categoria: "Aço para estrutura", unidadeBase: "m", palavrasChave: "vergalhao ferro 5/16 8mm ca50", embalagem: "Barra 12 m", quantidadeBase: 12, precoReferencia: 36, faixas: FAIXAS.barras },
+  { id: "vergalhao-4-2mm", nome: "Vergalhão CA-60 4,2 mm", categoria: "Aço para estrutura", unidadeBase: "m", palavrasChave: "vergalhao ferro 4.2 estribo ca60", embalagem: "Barra 12 m", quantidadeBase: 12, precoReferencia: 13.5, faixas: FAIXAS.barras },
+  { id: "malha-pop", nome: "Tela soldada POP 15x15 cm 4,2 mm (2x3 m)", categoria: "Aço para estrutura", unidadeBase: "un", palavrasChave: "malha pop tela soldada contrapiso", embalagem: "Painel 2x3 m", quantidadeBase: 1, precoReferencia: 68 },
+
+  // --- Ferragens, ferramentas e EPI ---
+  // Itens padronizados: comparados por kg, metro ou unidade, como os demais materiais.
+  { id: "prego-18x27", nome: "Prego com cabeça 18x27", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "kg", palavrasChave: "prego pregos ferragem", embalagem: "Pacote 1 kg", quantidadeBase: 1, precoReferencia: 20.9, marcas: ["Gerdau", "Belgo"] },
+  { id: "prego-17x21", nome: "Prego com cabeça 17x21", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "kg", palavrasChave: "prego pregos ferragem forma", embalagem: "Pacote 1 kg", quantidadeBase: 1, precoReferencia: 22.9, marcas: ["Gerdau", "Belgo"] },
+  { id: "arame-recozido", nome: "Arame recozido nº 18", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "kg", palavrasChave: "arame amarrar ferro", embalagem: "Rolo 1 kg", quantidadeBase: 1, precoReferencia: 21.9, marcas: ["Belgo", "Gerdau", "Morlan"] },
+  { id: "arame-galvanizado-14", nome: "Arame galvanizado nº 14 (2,1 mm)", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "kg", palavrasChave: "arame cerca varal galvanizado", embalagem: "Rolo 1 kg", quantidadeBase: 1, precoReferencia: 34.9, marcas: ["Belgo", "Gerdau", "Morlan"] },
+  { id: "parafuso-madeira", nome: "Parafuso para madeira 4,5 x 50 mm", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "parafuso parafusos madeira cabeca chata philips", embalagem: "Caixa 100 un", quantidadeBase: 100, precoReferencia: 32.9, marcas: ["Ciser", "Vonder", "Belenus"] },
+  { id: "porca-sextavada", nome: 'Porca sextavada 3/8" zincada', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "porca porcas sextavada zincada", embalagem: "Caixa 100 un", quantidadeBase: 100, precoReferencia: 27.9, marcas: ["Ciser", "Belenus"] },
+  { id: "fita-isolante", nome: "Fita isolante 19 mm", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "m", palavrasChave: "fita isolante eletrica", embalagem: "Rolo 20 m", quantidadeBase: 20, precoReferencia: 9.9, marcas: ["3M", "Tigre", "Foxlux"] },
+  { id: "disco-corte-ferro", nome: 'Disco de corte para ferro 4.1/2" (115 mm)', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "disco corte ferro metal esmerilhadeira lixadeira", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 6.9, marcas: ["Norton", "Bosch", "Vonder"] },
+  { id: "disco-diamantado", nome: "Disco diamantado segmentado 110 mm", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "disco serra marmore corte piso concreto diamantado", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 29.9, marcas: ["Norton", "Bosch", "Vonder"] },
+  { id: "luva-nitrilica", nome: "Luva de proteção nitrílica", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "luva luvas protecao epi nitrilica pedreiro", embalagem: "Par", quantidadeBase: 1, precoReferencia: 9.9, marcas: ["Danny", "Volk", "Kalipso"] },
+  { id: "luva-raspa", nome: "Luva de raspa de couro", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "luva luvas protecao epi couro raspa", embalagem: "Par", quantidadeBase: 1, precoReferencia: 14.9, marcas: ["Danny", "Volk", "Kalipso"] },
+  { id: "oculos-protecao", nome: "Óculos de proteção incolor", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "oculos protecao epi seguranca", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 12.9, marcas: ["3M", "Kalipso", "Danny"] },
+  { id: "capacete-seguranca", nome: "Capacete de segurança com jugular", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "capacete protecao epi seguranca obra", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 29.9, marcas: ["3M", "Plastcor", "MSA"] },
+  // Ferramentas de marca: um material "genérico" e a marca bem visível em cada oferta.
+  { id: "martelo-unha", nome: "Martelo de unha 27 mm", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "martelo ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 49.9, marcas: ["Tramontina", "Vonder", "Stanley", "Irwin"], compararMarca: true },
+  { id: "trena-5m", nome: "Trena 5 m", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "trena fita metrica medir ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 29.9, marcas: ["Stanley", "Vonder", "Starrett", "Tramontina"], compararMarca: true },
+  { id: "nivel-aluminio", nome: 'Nível de alumínio 12" (30 cm)', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "nivel bolha prumo ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 39.9, marcas: ["Vonder", "Stanley", "Tramontina"], compararMarca: true },
+  { id: "colher-pedreiro", nome: 'Colher de pedreiro 8"', categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "colher pedreiro ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 24.9, marcas: ["Tramontina", "Bellota", "Vonder"], compararMarca: true },
+  { id: "desempenadeira-aco", nome: "Desempenadeira de aço lisa", categoria: "Ferragens, ferramentas e EPI", unidadeBase: "un", palavrasChave: "desempenadeira desempenar reboco ferramenta", embalagem: "Unidade", quantidadeBase: 1, precoReferencia: 34.9, marcas: ["Tramontina", "Vonder", "Bellota"], compararMarca: true },
 
   // --- Hidráulica ---
   { id: "tubo-pvc-25", nome: "Tubo PVC soldável 25 mm", categoria: "Hidráulica", unidadeBase: "m", palavrasChave: "cano agua fria 25mm 3/4", embalagem: "Barra 6 m", quantidadeBase: 6, precoReferencia: 24.9 },
@@ -141,6 +169,12 @@ export const EMBALAGENS_ALTERNATIVAS = [
   // Tijolo: por milheiro (padrão) ou por unidade, para quem precisa de pouco
   { materialId: "tijolo-8-furos", embalagem: "Unidade", quantidadeBase: 1, acrescimo: 0.15, lojas: ["asa-norte", "sobradinho", "taguatinga", "guara"] },
   { materialId: "tijolo-6-furos", embalagem: "Unidade", quantidadeBase: 1, acrescimo: 0.15, lojas: ["asa-norte", "ceilandia", "taguatinga"] },
+  // Ferragens: caixa maior sai mais barato por unidade; fita em rolo menor sai mais caro por metro
+  { materialId: "parafuso-madeira", embalagem: "Caixa 500 un", quantidadeBase: 500, acrescimo: -0.12, lojas: ["taguatinga", "ceilandia", "samambaia"] },
+  { materialId: "fita-isolante", embalagem: "Rolo 10 m", quantidadeBase: 10, acrescimo: 0.1, lojas: ["asa-norte", "lago-sul", "gama"] },
+  { materialId: "disco-corte-ferro", embalagem: "Caixa 10 un", quantidadeBase: 10, acrescimo: -0.15, lojas: ["taguatinga", "guara", "valparaiso"] },
+  { materialId: "prego-18x27", embalagem: "Caixa 5 kg", quantidadeBase: 5, acrescimo: -0.08, lojas: ["ceilandia", "sobradinho"] },
+  { materialId: "luva-nitrilica", embalagem: "Pacote 12 pares", quantidadeBase: 12, acrescimo: -0.15, lojas: ["aguas-claras", "samambaia"] },
   { materialId: "cabo-2-5", embalagem: "Metro", quantidadeBase: 1, acrescimo: 0.25, lojas: ["taguatinga", "aguas-claras", "gama"] },
 ];
 

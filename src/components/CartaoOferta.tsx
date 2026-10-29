@@ -1,7 +1,7 @@
 // Cartão de uma oferta (um produto em uma loja).
 // No celular, o NOME DA LOJA e o PREÇO são o que mais aparece.
 
-import { BadgeCheck, Briefcase, MapPin } from "lucide-react";
+import { BadgeCheck, Briefcase, MapPin, Tag } from "lucide-react";
 import { UNIDADES_BASE, type Papel, type PlanoPago, type UnidadeBase } from "@/config/constantes";
 import { atacadoSoParaCnpj, faixasDisponiveis, precoPorUnidadeBase } from "@/domain/precos";
 import { formatarPrecoUnidade, formatarReais } from "@/lib/dinheiro";
@@ -29,9 +29,11 @@ type Props = {
   plano?: PlanoPago;
   /** Mostra o nome do produto no cartão (usado na oferta destaque do topo) */
   nomeProduto?: string;
+  /** Ferramenta de marca: a marca aparece em destaque, ao lado do nome da loja */
+  destacarMarca?: boolean;
 };
 
-export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, nomeProduto }: Props) {
+export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, nomeProduto, destacarMarca }: Props) {
   const unidade = UNIDADES_BASE[unidadeBase as UnidadeBase] ?? unidadeBase;
   const porUnidade = precoPorUnidadeBase(oferta.priceCents, oferta.baseQuantity);
   const faixas = faixasDisponiveis(oferta, papel);
@@ -64,6 +66,15 @@ export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, n
 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
+          {destacarMarca && (
+            <p className="mb-1">
+              <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 text-sm font-bold text-slate-900">
+                <Tag className="h-3.5 w-3.5 text-marca-600" aria-hidden />
+                <span className="sr-only">Marca:</span>
+                {oferta.brand ?? "Marca não informada"}
+              </span>
+            </p>
+          )}
           <h3 className="text-base leading-snug font-bold text-slate-900">{oferta.store.name}</h3>
           <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-500">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
@@ -82,7 +93,7 @@ export function CartaoOferta({ oferta, unidadeBase, papel, melhorPreco, plano, n
         <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-medium">
           {formatarPrecoUnidade(porUnidade)}/{unidade}
         </span>
-        {oferta.brand && <span>Marca: {oferta.brand}</span>}
+        {oferta.brand && !destacarMarca && <span>Marca: {oferta.brand}</span>}
       </div>
 
       {faixas.length > 0 && (

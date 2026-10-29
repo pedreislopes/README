@@ -124,6 +124,7 @@ function lerMaterial(form: FormData) {
     category: String(form.get("categoria") ?? ""),
     baseUnit: String(form.get("unidade") ?? ""),
     keywords: String(form.get("palavras") ?? "").trim().slice(0, 300),
+    brandMatters: form.get("compararMarca") === "on",
   };
 }
 

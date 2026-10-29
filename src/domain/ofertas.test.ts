@@ -18,6 +18,12 @@ describe("validarOferta", () => {
     expect(validarOferta(base)).toEqual({});
   });
 
+  it("ferramenta de marca: a marca é obrigatória", () => {
+    expect(validarOferta({ ...base, exigeMarca: true, brand: " " }).brand).toMatch(/Informe a marca/);
+    expect(validarOferta({ ...base, exigeMarca: true, brand: "Tramontina" })).toEqual({});
+    expect(validarOferta({ ...base, brand: null })).toEqual({}); // nos outros materiais é opcional
+  });
+
   it("exige material, embalagem, quantidade e preço", () => {
     const e = validarOferta({ ...base, productId: "", packageLabel: " ", baseQuantity: 0, priceCents: 0 });
     expect(Object.keys(e).sort()).toEqual(["baseQuantity", "packageLabel", "priceCents", "productId"]);

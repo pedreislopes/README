@@ -43,10 +43,11 @@ model User {
   termsVersion    String?
   createdAt       DateTime  @default(now())
 
-  store     Store?
-  sessions  Session[]
-  purchases Purchase[]
-  cart      Cart?
+  store          Store?
+  sessions       Session[]
+  passwordResets PasswordReset[]
+  purchases      Purchase[]
+  cart           Cart?
 }
 
 /// Sessão de login (o "crachá" guardado no navegador).
@@ -57,6 +58,22 @@ model Session {
   userId    String
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Pedido de "Esqueci minha senha". Como na sessão, guardamos só a "impressão
+/// digital" (hash SHA-256) do código enviado por e-mail. O link vale pouco
+/// tempo e só pode ser usado uma vez.
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  /// Preenchido quando o link é usado (ou cancelado por um pedido mais novo)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// Tentativa de login que FALHOU. Usada para bloquear ataques de força bruta
@@ -100,20 +117,24 @@ model Store {
   offers      Offer[]
   orders      Order[]
   suggestions MaterialSuggestion[]
+  imports     StoreImport[]
 }
 
 /// Material do catálogo geral (ex.: "Cimento CP II").
 /// Várias lojas vendem o mesmo material; cada venda é uma "Offer".
 model Product {
-  id          String  @id @default(cuid())
-  name        String
+  id           String  @id @default(cuid())
+  name         String
   /// Uma das categorias de src/config/constantes.ts
-  category    String
-  description String?
+  category     String
+  description  String?
   /// Unidade padronizada para comparar preços: "kg" | "m3" | "m2" | "un" | "m" | "l"
-  baseUnit    String
+  baseUnit     String
   /// Palavras extras para a busca (ex.: "cp2 cp-ii portland")
-  keywords    String  @default("")
+  keywords     String  @default("")
+  /// Ferramenta de marca (martelo, trena…): a marca aparece em destaque em cada
+  /// oferta e o lojista é obrigado a informá-la
+  brandMatters Boolean @default(false)
 
   offers Offer[]
 }
@@ -295,4 +316,54 @@ model AdminLog {
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Importação de produtos por planilha (painel do lojista)
+// -----------------------------------------------------------------------------
+/// Cada planilha enviada pelo lojista. Primeiro fica "PREVIA" (o lojista vê o
+/// resumo do que vai mudar); ao confirmar vira "APLICADA". Serve também de
+/// histórico de importações da loja.
+model StoreImport {
+  id        String    @id @default(cuid())
+  storeId   String
+  /// Quem enviou (cópia do nome, para o histórico continuar legível)
+  userName  String
+  fileName  String
+  /// "PREVIA" | "APLICADA" | "DESCARTADA"
+  status    String    @default("PREVIA")
+  /// Linhas válidas lidas da planilha (JSON), aplicadas ao confirmar
+  rows      String
+  /// Resumo em números (JSON): preços alterados, produtos novos, erros…
+  summary   String
+  createdAt DateTime  @default(now())
+  appliedAt DateTime?
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Contador do rodízio de anúncios (um por produto e plano)
+// -----------------------------------------------------------------------------
+/// Fica no banco (e não na memória do servidor) porque na Vercel cada acesso
+/// pode cair numa cópia diferente do site: com o contador na memória, o
+/// rodízio recomeçaria a toda hora e algumas lojas apareceriam mais que outras.
+model AdRotation {
+  /// Ex.: "cimento-cp2:DESTAQUE"
+  key       String   @id
+  /// Quantas vezes a busca já mostrou anúncios deste produto/plano
+  round     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// Configurações internas do sistema (chave e valor)
+// -----------------------------------------------------------------------------
+/// Ex.: "versao_dados_teste" = "2" (para o ambiente de teste saber quando
+/// regravar os dados fictícios após uma atualização do site)
+model SystemSetting {
+  key   String @id
+  value String
 }

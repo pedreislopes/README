@@ -13,9 +13,14 @@ export type DadosOferta = {
   priceCents: number;
   quantityStep: number;
   tiers: FaixaPreco[];
+  brand?: string | null;
+  /** Ferramenta de marca: a marca é obrigatória */
+  exigeMarca?: boolean;
 };
 
-export type ErrosOferta = Partial<Record<"productId" | "packageLabel" | "baseQuantity" | "priceCents" | "quantityStep" | "tiers", string>>;
+export type ErrosOferta = Partial<
+  Record<"productId" | "packageLabel" | "baseQuantity" | "priceCents" | "quantityStep" | "tiers" | "brand", string>
+>;
 
 /** Confere o cadastro de um produto da loja antes de gravar */
 export function validarOferta(d: DadosOferta): ErrosOferta {
@@ -25,6 +30,9 @@ export function validarOferta(d: DadosOferta): ErrosOferta {
   if (!(d.baseQuantity > 0)) erros.baseQuantity = "Informe quanto vem na embalagem.";
   if (!(d.priceCents > 0)) erros.priceCents = "Informe o preço.";
   if (d.quantityStep !== 1 && d.quantityStep !== 0.5) erros.quantityStep = "Escolha 1 ou 0,5.";
+  if (d.exigeMarca && !d.brand?.trim()) {
+    erros.brand = "Informe a marca: neste material o cliente compara preço e marca.";
+  }
 
   // Faixas: quantidade mínima maior que 1, sem repetir, e preço caindo conforme a quantidade sobe
   const faixas = [...d.tiers].sort((a, b) => a.minQuantity - b.minQuantity);

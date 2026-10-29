@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { CartaoOferta } from "@/components/CartaoOferta";
+import { NomeMaterial } from "@/components/NomeMaterial";
 import { UNIDADES_BASE, type UnidadeBase } from "@/config/constantes";
 import { montarResultados } from "@/domain/resultados";
 import { db } from "@/lib/db";
@@ -37,10 +38,17 @@ export default async function Produto(props: PageProps<"/produto/[id]">) {
 
       <header>
         <p className="text-sm text-slate-500">{produto.category}</p>
-        <h1 className="text-2xl leading-tight font-extrabold">{produto.name}</h1>
+        <NomeMaterial id={produto.id} nome={produto.name}>
+          <h1 className="text-2xl leading-tight font-extrabold">{produto.name}</h1>
+        </NomeMaterial>
         <p className="mt-1 text-sm text-slate-600">
           Ordenado pelo menor preço por {unidade}, para comparar embalagens diferentes.
         </p>
+        {produto.brandMatters && (
+          <p className="mt-2 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
+            Cada loja vende uma <strong>marca</strong>: compare o preço e a marca lado a lado.
+          </p>
+        )}
       </header>
 
       {!grupo ? (
@@ -57,6 +65,7 @@ export default async function Produto(props: PageProps<"/produto/[id]">) {
               papel={usuario?.role ?? null}
               melhorPreco={oferta.id === grupo.melhorPrecoId}
               plano={oferta.store.adPlan === "PREMIUM" || oferta.store.adPlan === "DESTAQUE" ? oferta.store.adPlan : undefined}
+              destacarMarca={produto.brandMatters}
             />
           ))}
         </div>

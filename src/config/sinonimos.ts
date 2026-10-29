@@ -23,6 +23,13 @@ export const GRUPOS_DE_SINONIMOS: string[][] = [
   ["telha", "telhado", "cobertura"],
   ["ceramico", "ceramica", "barro"],
   ["tela", "malha"],
+  // Ferragens, ferramentas e EPI (o plural, como "pregos" e "luvas", já é entendido sozinho)
+  ["epi", "protecao", "seguranca"],
+  ["disco", "rebolo"],
+  ["isolante", "isoladora"],
+  ["esmerilhadeira", "lixadeira", "makita"],
+  ["desempenadeira", "desempenador"],
+  ["ferramenta", "ferramental"],
 ];
 
 /**

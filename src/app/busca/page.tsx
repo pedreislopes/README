@@ -3,7 +3,9 @@ import Link from "next/link";
 import { ChevronRight, SearchX } from "lucide-react";
 import { CartaoOferta } from "@/components/CartaoOferta";
 import { FiltrosBusca, type ValoresFiltros } from "@/components/FiltrosBusca";
-import { CATEGORIAS, regioesDoFiltro } from "@/config/constantes";
+import { GuiaCategoria } from "@/components/GuiaCategoria";
+import { NomeMaterial } from "@/components/NomeMaterial";
+import { CATEGORIAS, regioesDoFiltro, type Categoria } from "@/config/constantes";
 import { MATERIAIS_POPULARES } from "@/config/sinonimos";
 import { buscarProdutos } from "@/domain/busca";
 import { MAX_ANUNCIOS_NO_TOPO } from "@/config/anuncios";
@@ -113,6 +115,16 @@ export default async function Busca(props: PageProps<"/busca">) {
         </div>
       ) : (
         <>
+          {valores.categoria && !valores.q && (
+            <>
+              <h1 className="text-xl font-extrabold">{valores.categoria}</h1>
+              <GuiaCategoria
+                categoria={valores.categoria as Categoria}
+                nomes={new Map(produtos.map((p) => [p.id, p.name]))}
+              />
+            </>
+          )}
+
           <p className="text-sm text-slate-600">
             {grupos.length === 1 ? "1 material encontrado" : `${grupos.length} materiais encontrados`}
             {valores.q && (
@@ -137,6 +149,7 @@ export default async function Busca(props: PageProps<"/busca">) {
                 papel={papel}
                 plano={plano}
                 nomeProduto={destaque.produto.name}
+                destacarMarca={destaque.produto.brandMatters}
               />
             ))}
 
@@ -145,8 +158,10 @@ export default async function Busca(props: PageProps<"/busca">) {
             return (
               <section key={produto.id} className="space-y-2">
                 <div className="flex items-end justify-between gap-2 pt-2">
-                  <div>
-                    <h2 className="text-lg leading-tight font-bold">{produto.name}</h2>
+                  <div className="min-w-0 flex-1">
+                    <NomeMaterial id={produto.id} nome={produto.name}>
+                      <h2 className="text-lg leading-tight font-bold">{produto.name}</h2>
+                    </NomeMaterial>
                     <p className="text-xs text-slate-500">
                       {produto.category} · {doProduto.length}{" "}
                       {doProduto.length === 1 ? "oferta" : "ofertas"}
@@ -160,6 +175,7 @@ export default async function Busca(props: PageProps<"/busca">) {
                     unidadeBase={produto.baseUnit}
                     papel={papel}
                     melhorPreco={oferta.id === melhorPrecoId}
+                    destacarMarca={produto.brandMatters}
                   />
                 ))}
                 {doProduto.length > limite && (

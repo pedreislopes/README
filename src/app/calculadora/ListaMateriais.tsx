@@ -7,6 +7,8 @@
 
 import { useState, useTransition } from "react";
 import { AlertTriangle, Check, Minus, Plus, ShoppingCart, Store, Tags } from "lucide-react";
+import { AjudaMaterial } from "@/components/AjudaMaterial";
+import type { Explicacao } from "@/config/explicacoes-materiais";
 import type { Papel } from "@/config/constantes";
 import { calcularItem, type OfertaPrecificavel } from "@/domain/precos";
 import { formatarQuantidade, nomeDaEmbalagem } from "@/domain/quantidades";
@@ -30,6 +32,8 @@ export type MaterialParaLista = {
   explicacao: string;
   fonte: string;
   conferir?: string;
+  /** Explicação do material (ícone "?"), quando houver */
+  ajuda?: Pick<Explicacao, "oQueE" | "paraQue" | "quandoUsar">;
   /** Ex.: "550 tijolos" */
   exatoTexto: string;
   porItem: EscolhaParaLista | null;
@@ -132,21 +136,24 @@ export function ListaMateriais({ materiais, papel, lojaUnica }: Props) {
           return (
             <li key={m.produtoId} className={`rounded-xl border border-slate-200 bg-white p-4 ${esc && !incluido ? "opacity-60" : ""}`}>
               <div className="flex items-start justify-between gap-3">
-                <label className="flex items-start gap-3">
+                <div className="flex min-w-0 items-start gap-3">
                   {esc && (
                     <input
                       type="checkbox"
                       checked={incluido}
                       onChange={(ev) => setIncluir((i) => ({ ...i, [m.produtoId]: ev.target.checked }))}
-                      className="mt-1 h-5 w-5 accent-marca-600"
+                      className="mt-1 h-5 w-5 shrink-0 accent-marca-600"
                       aria-label={`Incluir ${m.nome}`}
                     />
                   )}
-                  <span>
-                    <span className="block font-bold">{m.nome}</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-1">
+                      <span className="font-bold">{m.nome}</span>
+                      {m.ajuda && <AjudaMaterial nome={m.nome} explicacao={m.ajuda} />}
+                    </div>
                     <span className="block text-sm text-slate-600">{m.explicacao}</span>
-                  </span>
-                </label>
+                  </div>
+                </div>
                 {esc && incluido && <span className="shrink-0 text-lg font-extrabold">{formatarReais(totalDe(m, plano))}</span>}
               </div>
 
