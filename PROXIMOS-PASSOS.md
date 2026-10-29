@@ -13,8 +13,9 @@ um site de verdade: **como publicar**, **o que falta antes do lançamento** e **
 
 1. [Colocar o site na internet](#1-colocar-o-site-na-internet)
 2. [O que falta antes do lançamento real](#2-o-que-falta-antes-do-lançamento-real)
-3. [Estimativa de custos mensais](#3-estimativa-de-custos-mensais)
-4. [Ordem sugerida](#4-ordem-sugerida)
+3. [Integração de estoque por API](#3-integração-de-estoque-por-api)
+4. [Estimativa de custos mensais](#4-estimativa-de-custos-mensais)
+5. [Ordem sugerida](#5-ordem-sugerida)
 
 ---
 
@@ -86,7 +87,8 @@ recomendados** para o começo; 🟢 podem vir depois.
   - Código de Defesa do Consumidor: papel do Solid como intermediário, **política de troca e
     devolução**, prazo de arrependimento, canal de atendimento;
   - **contrato com os lojistas** (comissão, planos Destaque/Premium, responsabilidades, suspensão);
-  - regras de publicidade (os anúncios já aparecem como "Patrocinado").
+  - regras de publicidade (os anúncios já aparecem como "Patrocinado");
+  - uso das **fotos de bancos gratuitos** (Unsplash/Pexels) e das **marcas** das ferramentas nas ofertas.
 - 🔴 **Teste de invasão (pentest) por profissional de segurança.** A revisão feita no MVP e os testes
   automáticos cobrem os acessos indevidos mais comuns, mas **não substituem** um especialista tentando
   invadir o site de verdade. Fazer no ambiente de teste, já com a versão que vai ao ar, e corrigir o que
@@ -101,7 +103,9 @@ recomendados** para o começo; 🟢 podem vir depois.
 - 🔴 **Frete e entrega.** Hoje aparece "Frete: a combinar com a loja" e o banco já tem o campo reservado
   (`Order.freightCents`). Opções: cada loja cadastra a taxa por região do DF (mais simples para
   começar) ou integrar com transportadoras/apps de entrega depois.
-- 🔴 **"Esqueci minha senha".** Ainda não existe. Precisa de envio de e-mail (item abaixo).
+- ✅ **"Esqueci minha senha"** já existe. Falta só ligar o serviço de e-mail (item abaixo): hoje o link
+  aparece no registro do servidor. O lugar para ligar o Resend está pronto em `src/lib/email.ts`
+  (basta criar `RESEND_API_KEY` e `EMAIL_REMETENTE` na Vercel).
 - 🔴 **E-mails automáticos**: confirmação de cadastro e de pedido para o cliente, aviso de **pedido
   novo para a loja** (hoje ela só vê ao abrir o painel), aviso de aprovação/suspensão de loja.
   Serviços: Resend, Brevo, Amazon SES.
@@ -109,7 +113,11 @@ recomendados** para o começo; 🟢 podem vir depois.
   que a lei obriga a guardar (ex.: registros de pedidos).
 - 🟡 **Verificar se o CNPJ do lojista está ativo** na Receita Federal antes de aprovar a loja (hoje o
   sistema confere só se o número é válido).
-- 🟡 **Fotos dos produtos** e descrição mais completa.
+- 🟡 **Fotos dos produtos** e descrição mais completa. As **fotos das categorias** da página inicial
+  já podem ser trocadas (README, seção 8); registre a origem em `CREDITOS-IMAGENS.md`.
+- 🔴 **Engenheiro revisar as explicações dos materiais** e os guias "Qual escolher?"
+  (`src/config/explicacoes-materiais.ts`): cada texto tem a fonte e o campo `revisao` para registrar
+  quem conferiu.
 - 🟢 **Nota fiscal**: em geral emitida pela loja; o Solid pode guardar o número/arquivo no pedido.
 - 🟢 **Avisos por WhatsApp** para o lojista (pedido novo) e para o cliente (pedido separado/entregue).
 - 🟢 Opção "comprar tudo numa loja só" também no carrinho comum (hoje existe na calculadora).
@@ -120,13 +128,9 @@ recomendados** para o começo; 🟢 podem vir depois.
   banco: o site não deixa apagar, mas alguém com acesso direto ao banco poderia alterá-lo. Na internet,
   cada registro deve ser **copiado também para um serviço externo que não permite alteração** (ex.:
   Better Stack, Axiom, Datadog ou armazenamento com bloqueio de escrita, como Amazon S3 Object Lock).
-- 🔴 **Guardar a contagem do rodízio de anúncios no banco de dados.** Hoje a contagem que garante o
-  rodízio justo entre lojas Destaque/Premium fica na memória do servidor. Na Vercel existem várias
-  cópias do site rodando ao mesmo tempo, cada uma com a sua contagem, e elas reiniciam com frequência: a
-  divisão das vagas deixaria de ser exatamente igual entre as lojas que pagam. A correção é pequena:
-  uma tabela com a contagem por produto e plano, aumentada a cada busca (só o arquivo
-  `src/lib/anuncios.ts` muda). Também vale **registrar quantas vezes cada anúncio apareceu**, para
-  prestar contas às lojas.
+- ✅ **Contagem do rodízio de anúncios no banco de dados** — feito (tabela `AdRotation`): todas as
+  cópias do site na Vercel usam a mesma contagem. 🟡 Falta **registrar quantas vezes cada anúncio
+  apareceu**, para prestar contas às lojas que pagam.
 - 🔴 **Backup automático do banco** (diário, com teste de restauração). Neon e Supabase oferecem nos
   planos pagos.
 - 🟡 **Monitoramento de erros** (ex.: Sentry): avisa a equipe quando algo quebra para um cliente.
@@ -137,14 +141,91 @@ recomendados** para o começo; 🟢 podem vir depois.
 
 ---
 
-## 3. Estimativa de custos mensais
+## 3. Integração de estoque por API
+
+Hoje cada loja mantém os preços e a disponibilidade **à mão** (no painel) ou **por planilha** (Excel/CSV,
+em *Produtos → Importar planilha*). O próximo passo é a loja não precisar fazer nada: o **sistema de
+gestão da loja (ERP)** — o programa do caixa, do estoque e das notas fiscais — avisa o Solid sozinho
+quando um preço muda ou um produto acaba.
+
+> **API** é uma "porta" para dois sistemas conversarem sem pessoas no meio. Em vez de um funcionário
+> digitar o preço novo no Solid, o sistema da loja envia: "cimento CP II, saco 50 kg, R$ 39,90,
+> 120 em estoque".
+
+### 3.1 Dois caminhos (que podem existir juntos)
+
+| | **A) API própria do Solid** | **B) Integração com o ERP da loja** |
+|---|---|---|
+| Como funciona | O Solid publica um endereço seguro; o sistema da loja **envia** os preços e o estoque para ele. | O Solid **busca** os dados no sistema da loja (ou num "conector" que fala com ele), em horários definidos. |
+| Quem faz o trabalho na loja | O fornecedor do ERP ou um técnico da loja (uma vez) | O Solid faz a integração uma vez por ERP; cada loja só autoriza o acesso |
+| Bom para | Lojas grandes, redes, lojas com equipe de TI | Lojas pequenas e médias, que usam ERPs prontos |
+| Custo para o Solid | Menor (uma API serve para todos) | Maior (uma integração por ERP), mas vende mais fácil |
+
+**Recomendação:** começar pela **API própria** (A), que é uma só, e fazer integrações prontas (B) com os
+**2 ou 3 ERPs mais usados pelas lojas parceiras** — perguntando a elas antes de escolher.
+
+### 3.2 A) Como seria a API própria do Solid
+
+1. No painel, a loja gera uma **chave de acesso** (como uma senha só para o sistema dela), com permissão
+   apenas para **mexer nos produtos dela**. Pode apagar a chave e gerar outra a qualquer hora.
+2. O sistema da loja envia os dados no **mesmo formato da planilha** que já existe (código do material,
+   embalagem, preço, disponível, faixas de atacado). Assim, todas as regras atuais valem também para a
+   API: validação, erros linha por linha e o histórico de importações.
+3. Dois jeitos de enviar: **tudo de uma vez** (ex.: toda madrugada) ou **só o que mudou** (na hora em
+   que o preço muda no caixa).
+4. O Solid responde com o resumo ("12 preços alterados, 2 erros") e guarda o registro, como na planilha.
+5. Opcional: o Solid **avisa o sistema da loja** quando entra um pedido novo ("webhook"), para a loja
+   não precisar abrir o painel.
+
+Cuidados que já entram no projeto: conexão só por HTTPS; chave guardada só como "impressão digital"
+(hash), como as senhas; limite de envios por minuto; cada chave só enxerga a própria loja; registro de
+tudo o que foi alterado e por qual chave; documentação pública com exemplos.
+
+**Esforço estimado:** 2 a 4 semanas de um programador para a primeira versão (a importação por planilha
+já resolve a parte mais difícil: as regras de validação e o resumo).
+
+### 3.3 B) Integração com os ERPs das lojas
+
+Não encontramos um levantamento público confiável de **quais ERPs são os mais usados** pelas lojas de
+material de construção. Exemplos que aparecem com frequência no setor (a confirmar com as lojas
+parceiras):
+
+- **Redes médias e grandes:** TOTVS (linha para varejo de home center), WinThor, SAP.
+- **Lojas pequenas e médias:** sistemas próprios do segmento (ex.: Una, CIGAM, entre muitos regionais)
+  e ERPs genéricos para pequenas empresas, como Bling, Tiny (Olist) e Omie.
+
+Como fazer:
+
+1. **Perguntar às lojas parceiras** qual sistema usam (incluir no cadastro da loja um campo "sistema de
+   gestão"). Priorizar os que somam mais lojas.
+2. Ver se o ERP tem **API aberta** (Bling, Tiny e Omie, por exemplo, publicam documentação) ou se a
+   integração precisa passar pelo **fornecedor/parceiro** (comum em TOTVS, WinThor e SAP).
+3. Fazer um **conector** por ERP: ele lê preço e estoque no ERP e envia para a API própria do Solid
+   (caminho A). Assim, o Solid tem uma porta só, e cada ERP novo é só mais um conector.
+4. **Relacionar os produtos:** o código do produto no ERP da loja é diferente do código do material no
+   Solid. Na primeira vez, a loja faz esse "de-para" (uma tela simples: "o seu produto 00123 é o nosso
+   *Cimento CP II-E 32, saco 50 kg*"). Depois, é automático.
+5. **Começar com uma loja piloto** por ERP, comparando por algumas semanas os preços do Solid com os do
+   caixa da loja antes de liberar para todas.
+
+**Esforço estimado:** 1 a 3 semanas por ERP com API aberta; com ERPs fechados, depende do fornecedor
+(pode haver custo de licença ou de parceiro de integração).
+
+### 3.4 Ordem sugerida para a integração
+
+1. Planilha (✅ já existe) → 2. API própria com chave por loja → 3. aviso de pedido novo para o
+sistema da loja → 4. conectores para os ERPs das lojas parceiras, um de cada vez.
+
+---
+
+## 4. Estimativa de custos mensais
 
 > ⚠️ **Valores de referência, sujeitos a mudança.** Não foi possível consultar os sites dos fornecedores
 > ao escrever este documento: confira os preços atuais antes de contratar. Conversão usada:
 > **US$ 1 ≈ R$ 5,50**. Muitos serviços cobram em dólar; o valor em reais varia com o câmbio e com
 > impostos sobre serviços do exterior (IOF no cartão).
 
-### 3.1 Fase de testes (antes de abrir ao público)
+### 4.1 Fase de testes (antes de abrir ao público)
 
 Usando os planos gratuitos, só com pessoas de confiança e dados fictícios:
 
@@ -155,7 +236,7 @@ Usando os planos gratuitos, só com pessoas de confiança e dados fictícios:
 | Domínio `.com.br` | registro.br (cerca de R$ 40 por **ano**) | ~R$ 4/mês |
 | **Total** | | **~R$ 0 a 10 por mês** |
 
-### 3.2 Lançamento (primeiros meses, até alguns milhares de visitas por dia)
+### 4.2 Lançamento (primeiros meses, até alguns milhares de visitas por dia)
 
 | Item | Serviço (exemplo) | Referência | Em reais/mês |
 |---|---|---|---|
@@ -177,7 +258,7 @@ Usando os planos gratuitos, só com pessoas de confiança e dados fictícios:
   conforme o escopo).
 - **Manutenção do código** por um programador (correções, novas funções): depende de contratação.
 
-### 3.3 Quando o custo sobe
+### 4.3 Quando o custo sobe
 
 Os custos de hospedagem e banco crescem com o **uso** (visitas, pedidos, tamanho do banco). Um sinal
 para revisar o plano: muitas lojas, milhares de produtos ou dezenas de milhares de visitas por mês.
@@ -186,13 +267,14 @@ com comissões e planos de anúncio.
 
 ---
 
-## 4. Ordem sugerida
+## 5. Ordem sugerida
 
 1. Publicar o **ambiente de teste** ([PUBLICAR-TESTE.md](PUBLICAR-TESTE.md)) e mostrar a lojistas parceiros e possíveis clientes.
 2. Em paralelo: **engenheiro** (coeficientes) e **advogado** (Termos, Privacidade, contrato com lojistas).
-3. Desenvolver: **"esqueci minha senha"**, **e-mails automáticos**, **frete por região**,
-   **contagem do rodízio no banco**, **auditoria externa** e **backup**.
+3. Desenvolver: **e-mails automáticos** (e ligar o "esqueci minha senha" ao Resend), **frete por
+   região**, **auditoria externa** e **backup**.
 4. Integrar o **pagamento** (com divisão automática para as lojas).
-5. **Teste de invasão profissional** na versão final, no ambiente de teste. Corrigir o que aparecer.
-6. Publicar a **produção**, cadastrar o administrador real e as primeiras lojas, e abrir para clientes
+5. **API de estoque e preços** para as lojas (seção 3), começando pelas parceiras.
+6. **Teste de invasão profissional** na versão final, no ambiente de teste. Corrigir o que aparecer.
+7. Publicar a **produção**, cadastrar o administrador real e as primeiras lojas, e abrir para clientes
    — de preferência começando por uma ou duas regiões do DF.

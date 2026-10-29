@@ -100,7 +100,7 @@ No final deve aparecer uma lista com ✔, como `✔ 9 lojas, 44 materiais…` e
 npm test
 ```
 
-Deve terminar com algo como `Tests  107 passed`.
+Deve terminar com algo como `Tests  135 passed`.
 
 ### 1.7 Ligue o site
 
@@ -281,8 +281,8 @@ Sugestão de 15 minutos para ver tudo funcionando. Use o navegador no **modo cel
 
 | Comando | O que testa |
 |---|---|
-| `npm test` | **107 testes das regras**: busca, preço por unidade, faixas de atacado, carrinho, calculadora, comissão, cancelamento, relatório/CSV, anúncios Premium/Destaque e rodízio, CPF/CNPJ, limite de login, configuração do banco PostgreSQL da Vercel. |
-| `npm run test:e2e` | **29 testes de ponta a ponta**: um navegador de verdade, do tamanho de um **celular de 360 px**, clica pelo site inteiro (busca, cadastro, carrinho, pedido, calculadora, lojista, administrador e segurança). |
+| `npm test` | **135 testes das regras**: busca (com sinônimos e plurais), preço por unidade, faixas de atacado, carrinho, calculadora, comissão, cancelamento, relatório/CSV, anúncios Premium/Destaque e rodízio (contador no banco), CPF/CNPJ, limite de login, regiões do DF/Entorno, explicações dos materiais, importação por planilha, "esqueci minha senha", imagens das categorias, configuração do banco PostgreSQL da Vercel. |
+| `npm run test:e2e` | **43 testes de ponta a ponta**: um navegador de verdade, do tamanho de um **celular de 360 px**, clica pelo site inteiro (página inicial, busca e filtros de região, explicação dos materiais, cadastro, "esqueci minha senha", carrinho, pedido, calculadora, lojista, importação por planilha, administrador e segurança). |
 
 Para os testes de ponta a ponta, na primeira vez rode também `npx playwright install chromium`
 (baixa o navegador de teste). **Atenção:** eles apagam e recriam os dados de teste do banco.

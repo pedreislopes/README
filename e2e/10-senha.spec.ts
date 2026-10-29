@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import bcrypt from "bcryptjs";
+import { digitosCpf } from "../src/domain/documentos";
 import { db, entrar, principal } from "./ajuda";
 
 const hash = (t: string) => createHash("sha256").update(t).digest("hex");
@@ -36,7 +37,7 @@ test.describe("Esqueci minha senha", () => {
         email: "troca-senha@teste.com",
         passwordHash: await bcrypt.hash("antiga123", 4),
         role: "CPF",
-        document: "52998224725",
+        document: "987654321" + digitosCpf("987654321"), // CPF válido, só deste teste
       },
     });
     // Um aparelho já logado com a senha antiga

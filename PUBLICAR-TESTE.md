@@ -145,7 +145,7 @@ Pronto: a Vercel guardou, sozinha, o endereço secreto do banco nas variáveis d
 3. Na janelinha, toque em **Redeploy** de novo.
 4. Espere de 2 a 4 minutos. Desta vez, o registro mostra, entre outras coisas:
    - `Banco vazio: gravando os dados de teste…`
-   - `✔ 9 lojas, 44 materiais, 338 ofertas`
+   - `✔ 11 lojas, 60 materiais, 568 ofertas`
    - e termina com **Ready** (pronto) ✅.
 
 O que aconteceu por baixo dos panos: o Solid criou as tabelas no banco, gravou as lojas, produtos e
@@ -211,7 +211,24 @@ em 2 a 4 minutos. Hoje o repositório tem um só ramo (*branch*), o `claude/soli
 Vercel publica no endereço principal `….vercel.app`. Se no futuro surgirem outros ramos, cada um ganha
 um endereço de **prévia** separado (*Preview*), usando o **mesmo banco de teste**.
 
-Os dados **não** são apagados nessas publicações (só com `RESETAR_DADOS_TESTE=sim`).
+Os dados **não** são apagados nessas publicações, com duas exceções:
+- quando você usa `RESETAR_DADOS_TESTE=sim` (veja acima);
+- quando **os próprios dados de teste mudam** numa atualização (ex.: lojas ou materiais novos). Aí o
+  registro da publicação mostra `Dados de teste mudaram (versão 1 → 2): recriando os dados de teste…`
+  e tudo volta ao início, já com os dados novos. Pedidos e alterações feitos nos testes se perdem.
+
+### Ver o link de "Esqueci minha senha"
+
+Ainda não há serviço de e-mail. No ambiente de teste, o e-mail com o link aparece no **registro do
+servidor**:
+
+1. Peça o link no site (**Entrar → Esqueci minha senha**).
+2. Na Vercel, abra o projeto → **Logs** (barra da esquerda).
+3. Procure a linha `E-MAIL (não enviado: serviço de e-mail não configurado)` e copie o endereço que
+   começa com `https://…/redefinir-senha?token=`. Ele vale 30 minutos e uma vez só.
+
+Para enviar e-mails de verdade (Resend), veja o começo do arquivo `src/lib/email.ts`: basta criar as
+variáveis `RESEND_API_KEY` e `EMAIL_REMETENTE` e fazer Redeploy.
 
 > ℹ️ Para conferir qual ramo é o principal: **Settings** → **Git** → **Production Branch**.
 
@@ -273,7 +290,8 @@ Proteções que o próprio código garante:
      `scripts/url-banco.mjs`;
   2. gera o Prisma Client com `prisma/postgres/schema.prisma` e roda `prisma migrate deploy`
      com as migrações de `prisma/postgres/migrations`;
-  3. se `SOLID_AMBIENTE=teste` **e** (banco vazio **ou** `RESETAR_DADOS_TESTE=sim`), roda o seed;
+  3. se `SOLID_AMBIENTE=teste` **e** (banco vazio **ou** `RESETAR_DADOS_TESTE=sim` **ou** versão dos
+     dados de teste diferente da gravada no banco — `scripts/versao-dados-teste.mjs`), roda o seed;
   4. roda `next build`.
 - `prisma/postgres/schema.prisma` é **gerado** a partir de `prisma/schema.prisma`
   (`npm run banco:gerar-postgres`). Um teste automático falha se os dois ficarem diferentes. Ao mudar o
