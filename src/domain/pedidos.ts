@@ -80,7 +80,10 @@ export function intervaloDoPeriodo(de?: string, ate?: string): { gte?: Date; lte
  */
 export function gerarCsv(linhas: (string | number)[][]): string {
   const celula = (v: string | number) => {
-    const t = String(v);
+    let t = String(v);
+    // Texto começando com = + - @ vira fórmula no Excel ("injeção de fórmula"):
+    // um apóstrofo na frente faz o Excel mostrar como texto. Números ficam como estão.
+    if (typeof v === "string" && /^[=+\-@\t\r]/.test(t) && !/^-?\d+(,\d+)?$/.test(t)) t = `'${t}`;
     return /[";\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   };
   return "﻿" + linhas.map((l) => l.map(celula).join(";")).join("\r\n") + "\r\n";

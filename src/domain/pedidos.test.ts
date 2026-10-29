@@ -80,4 +80,9 @@ describe("planilha CSV", () => {
     ]);
     expect(csv).toBe('﻿Loja;Valor\r\n"Depósito ""Bom; Preço""";1234,56\r\n');
   });
+
+  it("não deixa um texto virar fórmula no Excel, mas mantém números negativos", () => {
+    const csv = gerarCsv([["=HYPERLINK(\"x\")", "@SOMA(A1)", "-12,50", 0.5]]);
+    expect(csv).toBe(`﻿"'=HYPERLINK(""x"")";'@SOMA(A1);-12,50;0.5\r\n`);
+  });
 });

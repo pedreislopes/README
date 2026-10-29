@@ -1,6 +1,6 @@
 // Produtos da loja: edição rápida de preço, disponível/sem estoque e reajuste em massa.
 import Link from "next/link";
-import { CheckCircle2, Plus } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, Plus } from "lucide-react";
 import { db } from "@/lib/db";
 import { exigirLoja } from "@/lib/loja";
 import { ListaProdutosLoja } from "./ListaProdutosLoja";
@@ -28,6 +28,12 @@ export default async function ProdutosLoja(props: PageProps<"/loja/produtos">) {
         className="flex items-center justify-center gap-2 rounded-xl bg-marca-600 py-3.5 font-bold text-white hover:bg-marca-700"
       >
         <Plus className="h-5 w-5" /> Cadastrar produto
+      </Link>
+      <Link
+        href="/loja/importar"
+        className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-3 font-semibold text-slate-800 hover:bg-slate-50"
+      >
+        <FileSpreadsheet className="h-5 w-5 text-emerald-700" /> Importar planilha (Excel ou CSV)
       </Link>
       <Link href="/loja/sugerir" className="block text-center text-sm font-semibold text-marca-700">
         Não encontrou um material no catálogo? Sugerir material
